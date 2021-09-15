@@ -16,7 +16,7 @@ import java.util.List;
  *
  * The {@link #peek(String...)} and {@link #match(String...)} functions are * helpers you need to use, they will make the implementation a lot easier. */
 public final class Lexer {
-// throw parse except everywhere where it cant be lexed
+    // throw parse except everywhere where it cant be lexed
     private final CharStream chars;
 
     public Lexer(String input) {
@@ -32,26 +32,19 @@ public final class Lexer {
         List<Token> tokenList = new ArrayList<Token> ();
         char curr = chars.get(0); //setting current character to beginning
 
-
-
-        //while(curr!= )
-
         //until reached end of input str
         while(chars.index < chars.input.length()){
             //if next chars are whitespace, match to nothing, advance char stream
 
             //Important: match and peek only check 1 char at a time
-            if(peek("[ \\b\\n\\r\\t]")){
-                match("[ \\b\\n\\r\\t]");
+            if(peek(" |\b|\n|\r|\t")){
+                match(" |\b|\n|\r|\t");
             }
             else{
-
                 tokenList.add(lexToken());
-
             }
         }
         return tokenList;
-        //throw new UnsupportedOperationException(); //TODO
     }
 
     /**
@@ -64,46 +57,44 @@ public final class Lexer {
      */
     public Token lexToken() {
 
-    if(peek("@?[A-Za-z][A-Za-z0-9_-]*")){
-        return lexIdentifier();
-    }
-    //int
-    else if(peek("0|-?[1-9][0-9]*")){
-    return lexNumber();
-    }
-    //dec
-    else if(peek("-?(0|[1-9][0-9]+)\\.[0-9]+")){
-        return lexNumber();
-    }
-    else if(peek("[']([^'\\n\\r\\\\]|\\\\[bnrt'\"\\\\])[']")){
-        return  lexCharacter();
-    }
-    else if(peek("\\\"([^\"\\n\\r\\\\]|\\\\[bnrt'\"\\\\])*\\\"")){
-        return lexString();
-    }
-    else if(peek("\\\\[bnrt'\"\\\\]")){
-        //THROW AN ERROR
-        //lexEscape();
-        throw new ParseException("Parse exception at index: " + Integer.toString(chars.index), chars.index);
-    }
-    else if(peek("[!=]=?|&&|\\|\\||.")){
-        return lexOperator();
-    }
-    else{
-        //THROW AN ERROR
-        throw new ParseException("Parse exception at index: " + Integer.toString(chars.index), chars.index);
-    }
-
-        //throw new UnsupportedOperationException(); //TODO
+        if(peek("@?[A-Za-z]")){
+            return lexIdentifier();
+        }
+        //int
+        else if(peek("-|[1-9]|0")){
+            return lexNumber();
+        }
+        //dec
+        else if(peek("-?(0|[1-9][0-9]+)\\.[0-9]+")){
+            return lexNumber();
+        }
+        else if(peek("[']([^'\\n\\r\\\\]|\\\\[bnrt'\"\\\\])[']")){
+            return  lexCharacter();
+        }
+        else if(peek("\"")){
+            return lexString();
+        }
+        else if(peek("[^a-zA-Z0-9]")){
+            return lexOperator();
+        }
+        else if(peek("\b|\n|\r|\t")){
+            //THROW AN ERROR
+            lexEscape();
+            throw new ParseException("Parse exception at index: " + Integer.toString(chars.index), chars.index);
+        }
+        else{
+            //THROW AN ERROR
+            throw new ParseException("Parse exception at index: " + Integer.toString(chars.index), chars.index);
+        }
     }
 
     public Token lexIdentifier() {
         //here we emit token i think
 
-      while(peek("@?[A-Za-z][A-Za-z0-9_-]*")){
-          // may be more efficent using advance()
-          match("@?[A-Za-z][A-Za-z0-9_-]*");
-      }
+        while(peek("@?[A-Za-z0-9_-]*")){
+            // may be more efficent using advance()
+            match("@?[A-Za-z0-9_-]*");
+        }
 
         return chars.emit(Token.Type.IDENTIFIER);
 
@@ -111,50 +102,111 @@ public final class Lexer {
     }
 
     public Token lexNumber() {
-        //if(int)
-        //int
-        if (peek("0|-?[1-9][0-9]*")) {
-            while(peek("0|-?[1-9][0-9]*")){
-                match("0|-?[1-9][0-9]*");
+        if(peek("0")){
+            match("0");
+
+            if(peek("0|-|[1-9]")){
+                throw new ParseException("Parse exception", chars.index);
+            }
+            else if(peek("\\.")){
+                match("\\.");
+                if(peek("[0-9]")){
+                    while(peek("[0-9]")){
+                        match("[0-9]");
+                    }
+                    return chars.emit(Token.Type.DECIMAL);
+                } else {
+                    throw new ParseException("Parse exception", chars.index);
+                }
+
+            }
+            return chars.emit(Token.Type.INTEGER);
+        }
+
+        if (peek("-|[1-9]")) {
+            while(peek("-|[1-9]")){
+                match("-|[1-9]");
+            }
+            if(peek("\\.")){
+                match("\\.");
+                if(peek("[0-9]")){
+                    while(peek("[0-9]")){
+                        match("[0-9]");
+                    }
+                    return chars.emit(Token.Type.DECIMAL);
+                } else {
+                    throw new ParseException("Parse exception", chars.index);
+                }
             }
 
             return chars.emit(Token.Type.INTEGER);
         }
         else {
-            //decimal
-            while(peek("-?(0|[1-9][0-9]+)\\.[0-9]+")){
-                match("'-?(0|[1-9][0-9]+)\\.[0-9]+");
-            }
-
-            return chars.emit(Token.Type.DECIMAL);
+            throw new ParseException("Parse exception", chars.index);
         }
-        //throw new UnsupportedOperationException(); //TODO
     }
 
     public Token lexCharacter() {
-        // use lexEscape() when escape character is detected
-        throw new UnsupportedOperationException(); //TODO
+        while(peek("[']([^'\\n\\r\\\\]|'\\'[bnrt'\"\\\\])[']")){
+            match("[']([^'\\n\\r\\\\]|'\\'[bnrt'\"\\\\])[']");
+        }
+
+        return chars.emit(Token.Type.CHARACTER);
     }
 
     public Token lexString() {
         // use lexEscape() when escape character is detected
-        throw new UnsupportedOperationException(); //TODO
+        boolean quotesOpen = false;
+        if(peek("\"")){
+            quotesOpen = true;
+            match("\"");
+        }
+
+        while(peek("[^\"]")){
+            if(peek("\b|\n|\r|\t")){
+                lexEscape();
+            } else if(peek("\\\\")){
+                match("\\\\");
+                if(peek("[bnrt]")){
+                    lexEscape();
+                } else {
+                    throw new ParseException("Parse exception: invalid escape", chars.index);
+                }
+            } else {
+                match("[^\"]");
+            }
+        }
+
+        //second quotes in empty string
+        if(peek("\"")){
+            quotesOpen = false;
+            match("\"");
+        }
+
+        if(quotesOpen){
+            throw new ParseException("Parse exception: unterminated quotes", chars.index);
+        } else {
+            return chars.emit(Token.Type.STRING);
+        }
     }
 
     public void lexEscape() {
-        //Match but don't emit or return anything
-        throw new UnsupportedOperationException(); //TODO
+        while(peek("\b|\n|\r|\t")){
+            match("\b|\n|\r|\t");
+        }
     }
 
     public Token lexOperator() {
 
-        while(peek("[!=]=?|&&|\\|\\||.")){
+        while(peek("[^a-zA-Z0-9]")){
             // may be more efficent using advance()
-            match("[!=]=?|&&|\\|\\||.");
+            if(peek("\b|\n|\r|\t")){
+                lexEscape();
+                throw new ParseException("Parse exception: escape in operator", chars.index);
+            }
+            match("[^a-zA-Z0-9]");
         }
-
         return chars.emit(Token.Type.OPERATOR);
-        //throw new UnsupportedOperationException(); //TODO
     }
 
     /**
@@ -166,15 +218,10 @@ public final class Lexer {
         for(int i = 0; i< patterns.length; i++){
             //chars from charStream
             if(!chars.has(i) || !String.valueOf(chars.get(i)).matches(patterns[i])){
-
                 return false;
             }
-
-
         }
         return true;
-
-        //throw new UnsupportedOperationException(); //TODO (in Lecture)
     }
 
 
