@@ -62,11 +62,7 @@ public final class Lexer {
             return lexIdentifier();
         }
         //int
-        else if(peek("-|[1-9]|0")){
-            return lexNumber();
-        }
-        //dec
-        else if(peek("-?(0|[1-9][0-9]+)\\.[0-9]+")){
+        else if(peek("-","[1-9]") || peek("[0-9]")){
             return lexNumber();
         }
         else if(peek("[']([^'\\n\\r\\\\]|\\\\[bnrt'\"\\\\])[']")){
@@ -106,7 +102,7 @@ public final class Lexer {
             match("0");
 
             if(peek("0|-|[1-9]")){
-                throw new ParseException("Parse exception", chars.index);
+                throw new ParseException("Parse exception: leading zeros", chars.index);
             }
             else if(peek("\\.")){
                 match("\\.");
@@ -124,8 +120,11 @@ public final class Lexer {
         }
 
         if (peek("-|[1-9]")) {
-            while(peek("-|[1-9]")){
-                match("-|[1-9]");
+            if(peek("-")){
+                match("-");
+            }
+            while(peek("[1-9]")){
+                match("[1-9]");
             }
             if(peek("\\.")){
                 match("\\.");
@@ -198,13 +197,13 @@ public final class Lexer {
 
     public Token lexOperator() {
 
-        while(peek("[^a-zA-Z0-9\"]")){
+        while(peek("[^a-zA-Z0-9\" ]")){
             // may be more efficent using advance()
             if(peek("\b|\n|\r|\t")){
                 lexEscape();
                 throw new ParseException("Parse exception: escape in operator", chars.index);
             }
-            else if(!peek("[<>!]")){
+            else if(!peek("[<>!=+-]")){
                 match("[^a-zA-Z0-9\"]");
                 return chars.emit(Token.Type.OPERATOR);
             }

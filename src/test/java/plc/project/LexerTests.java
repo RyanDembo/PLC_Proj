@@ -20,16 +20,11 @@ public class LexerTests {
 
     private static Stream<Arguments> testIdentifier() {
         return Stream.of(
-
-
-
-                Arguments.of("Alphabetic", "getName", true)
-                /*
+                Arguments.of("Alphabetic", "getName", true),
                 Arguments.of("Alphanumeric", "thelegend27", true),
+                Arguments.of("Underscore", "the_legend", true),
                 Arguments.of("Leading Hyphen", "-five", false),
                 Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false)
-
-                 */
         );
     }
 
@@ -44,7 +39,9 @@ public class LexerTests {
                 Arguments.of("Single Digit", "1", true),
                 Arguments.of("Multiple Digits", "12345", true),
                 Arguments.of("Negative", "-1", true),
-                Arguments.of("Leading Zero", "01", false)
+                Arguments.of("Zero", "0", true),
+                Arguments.of("Leading Zero", "01", false),
+                Arguments.of("Multiple negatives", "--1", false)
         );
     }
 
@@ -58,8 +55,12 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
+                Arguments.of("Zero", "0.0", true),
                 Arguments.of("Trailing Decimal", "1.", false),
-                Arguments.of("Leading Decimal", ".5", false)
+                Arguments.of("Leading Decimal", ".5", false),
+                Arguments.of("Leading Zeros", "000.3", false),
+                Arguments.of("Multiple decimals", "2.5.4", false),
+                Arguments.of("Multiple negatives", "--1.2", false)
         );
     }
 
@@ -105,6 +106,10 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Character", "(", true),
                 Arguments.of("Comparison", "!=", true),
+                Arguments.of("less than", "<=", true),
+                Arguments.of("Equality", "==", true),
+                Arguments.of("Increment", "++", true),
+                Arguments.of("Decrement", "--", true),
                 Arguments.of("Space", " ", false),
                 Arguments.of("Tab", "\t", false)
         );
@@ -131,6 +136,22 @@ public class LexerTests {
                         new Token(Token.Type.STRING, "\"Hello, World!\"", 6),
                         new Token(Token.Type.OPERATOR, ")", 21),
                         new Token(Token.Type.OPERATOR, ";", 22)
+                )),
+                Arguments.of("Example 3", "while(x < 5) {x = x + 1;}", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER,"while", 0),
+                        new Token(Token.Type.OPERATOR, "(", 5),
+                        new Token(Token.Type.IDENTIFIER,"x", 6),
+                        new Token(Token.Type.OPERATOR, "<", 8),
+                        new Token(Token.Type.INTEGER, "5", 10),
+                        new Token(Token.Type.OPERATOR, ")", 11),
+                        new Token(Token.Type.OPERATOR, "{", 13),
+                        new Token(Token.Type.IDENTIFIER,"x", 14),
+                        new Token(Token.Type.OPERATOR, "=", 16),
+                        new Token(Token.Type.IDENTIFIER,"x", 18),
+                        new Token(Token.Type.OPERATOR, "+", 20),
+                        new Token(Token.Type.INTEGER, "1", 22),
+                        new Token(Token.Type.OPERATOR, ";", 23),
+                        new Token(Token.Type.OPERATOR, "}", 24)
                 ))
         );
     }
@@ -140,6 +161,9 @@ public class LexerTests {
         ParseException exception = Assertions.assertThrows(ParseException.class,
                 () -> new Lexer("\"unterminated").lex());
         Assertions.assertEquals(13, exception.getIndex());
+
+        //other tests to write: unterminated chararacter, invalid escape, leading zeros
+
     }
 
     /**
