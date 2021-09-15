@@ -16,7 +16,7 @@ import java.util.List;
  *
  * The {@link #peek(String...)} and {@link #match(String...)} functions are * helpers you need to use, they will make the implementation a lot easier. */
 public final class Lexer {
-
+// throw parse except everywhere where it cant be lexed
     private final CharStream chars;
 
     public Lexer(String input) {
@@ -50,7 +50,8 @@ public final class Lexer {
 
             }
         }
-        throw new UnsupportedOperationException(); //TODO
+        return tokenList;
+        //throw new UnsupportedOperationException(); //TODO
     }
 
     /**
@@ -66,59 +67,94 @@ public final class Lexer {
     if(peek("@?[A-Za-z][A-Za-z0-9_-]*")){
         return lexIdentifier();
     }
-    else if(peek()){
-
+    //int
+    else if(peek("0|-?[1-9][0-9]*")){
+    return lexNumber();
     }
-    else if(peek()){
-
+    //dec
+    else if(peek("-?(0|[1-9][0-9]+)\\.[0-9]+")){
+        return lexNumber();
     }
-    else if(peek()){
-
+    else if(peek("[']([^'\\n\\r\\\\]|\\\\[bnrt'\"\\\\])[']")){
+        return  lexCharacter();
     }
-    else if(peek()){
-
+    else if(peek("\\\"([^\"\\n\\r\\\\]|\\\\[bnrt'\"\\\\])*\\\"")){
+        return lexString();
     }
-    else if(peek()){
-
+    else if(peek("\\\\[bnrt'\"\\\\]")){
+        //THROW AN ERROR
+        //lexEscape();
+        throw new ParseException("Parse exception at index: " + Integer.toString(chars.index), chars.index);
     }
-    else if(peek()){
-
+    else if(peek("[!=]=?|&&|\\|\\||.")){
+        return lexOperator();
+    }
+    else{
+        //THROW AN ERROR
+        throw new ParseException("Parse exception at index: " + Integer.toString(chars.index), chars.index);
     }
 
-return null;
         //throw new UnsupportedOperationException(); //TODO
     }
 
     public Token lexIdentifier() {
         //here we emit token i think
 
-      while(match("@?[A-Za-z][A-Za-z0-9_-]*")){
-
+      while(peek("@?[A-Za-z][A-Za-z0-9_-]*")){
+          // may be more efficent using advance()
+          match("@?[A-Za-z][A-Za-z0-9_-]*");
       }
 
         return chars.emit(Token.Type.IDENTIFIER);
 
-        //throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException();
     }
 
     public Token lexNumber() {
-        throw new UnsupportedOperationException(); //TODO
+        //if(int)
+        //int
+        if (peek("0|-?[1-9][0-9]*")) {
+            while(peek("0|-?[1-9][0-9]*")){
+                match("0|-?[1-9][0-9]*");
+            }
+
+            return chars.emit(Token.Type.INTEGER);
+        }
+        else {
+            //decimal
+            while(peek("-?(0|[1-9][0-9]+)\\.[0-9]+")){
+                match("'-?(0|[1-9][0-9]+)\\.[0-9]+");
+            }
+
+            return chars.emit(Token.Type.DECIMAL);
+        }
+        //throw new UnsupportedOperationException(); //TODO
     }
 
     public Token lexCharacter() {
+        // use lexEscape() when escape character is detected
         throw new UnsupportedOperationException(); //TODO
     }
 
     public Token lexString() {
+        // use lexEscape() when escape character is detected
         throw new UnsupportedOperationException(); //TODO
     }
 
     public void lexEscape() {
+        //Match but don't emit or return anything
         throw new UnsupportedOperationException(); //TODO
     }
 
     public Token lexOperator() {
-        throw new UnsupportedOperationException(); //TODO
+
+        while(peek("[!=]=?|&&|\\|\\||.")){
+            // may be more efficent using advance()
+            match("[!=]=?|&&|\\|\\||.");
+        }
+
+        return chars.emit(Token.Type.OPERATOR);
+        //throw new UnsupportedOperationException(); //TODO
     }
 
     /**
