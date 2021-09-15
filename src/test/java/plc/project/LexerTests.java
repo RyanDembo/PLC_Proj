@@ -164,6 +164,10 @@ public class LexerTests {
 
         //other tests to write: unterminated chararacter, invalid escape, leading zeros
 
+        ParseException leadingZeros = Assertions.assertThrows(ParseException.class,
+                () -> new Lexer("00224").lex());
+        Assertions.assertEquals(1, leadingZeros.getIndex());
+
     }
 
     /**

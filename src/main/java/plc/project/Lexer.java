@@ -65,8 +65,8 @@ public final class Lexer {
         else if(peek("-","[1-9]") || peek("[0-9]")){
             return lexNumber();
         }
-        else if(peek("[']([^'\\n\\r\\\\]|\\\\[bnrt'\"\\\\])[']")){
-            return  lexCharacter();
+        else if(peek("[']")) {
+            return lexCharacter();
         }
         else if(peek("\"")){
             return lexString();
@@ -146,11 +146,40 @@ public final class Lexer {
     }
 
     public Token lexCharacter() {
-        while(peek("[']([^'\\n\\r\\\\]|'\\'[bnrt'\"\\\\])[']")){
-            match("[']([^'\\n\\r\\\\]|'\\'[bnrt'\"\\\\])[']");
+    // use lexEscape() when escape character is detected
+        boolean quoteOpen = false;
+        if(peek("[']")){
+            quoteOpen = true;
+            match("[']");
+        }
+        if(peek("[']")){
+            throw new ParseException("Parse exception: empty character at", chars.index);
+        }
+        if(peek("\\\\")){
+            match("\\\\");
+            if(peek("[bnrt]")){
+                lexEscape(); //OR match("[bnrt]")
+
+            }
+            else{
+                throw new ParseException("Parse exception: invalid escape", chars.index);
+            }
+
         }
 
-        return chars.emit(Token.Type.CHARACTER);
+        if (peek("[^'\\n\\r\\\\]")){
+            match("[^'\\n\\r\\\\]");
+        }
+
+        if(peek("[']")){
+            quoteOpen = false;
+            match("[']");
+        }
+        if(quoteOpen){
+            throw new ParseException("Parse exception: unterminated character quote", chars.index);
+        } else {
+            return chars.emit(Token.Type.CHARACTER);
+        }
     }
 
     public Token lexString() {
