@@ -38,7 +38,8 @@ public final class Lexer {
 
             //Important: match and peek only check 1 char at a time
             if(peek(" |\b|\n|\r|\t")){
-                match(" |\b|\n|\r|\t");
+                //updating index instead of advancing to not change the length
+                chars.index++;
             }
             else{
                 tokenList.add(lexToken());
@@ -74,7 +75,7 @@ public final class Lexer {
         else if(peek("\"")){
             return lexString();
         }
-        else if(peek("[^a-zA-Z0-9]")){
+        else if(peek("[^a-zA-Z0-9\"]")){
             return lexOperator();
         }
         else if(peek("\b|\n|\r|\t")){
@@ -92,7 +93,6 @@ public final class Lexer {
         //here we emit token i think
 
         while(peek("@?[A-Za-z0-9_-]*")){
-            // may be more efficent using advance()
             match("@?[A-Za-z0-9_-]*");
         }
 
@@ -198,13 +198,17 @@ public final class Lexer {
 
     public Token lexOperator() {
 
-        while(peek("[^a-zA-Z0-9]")){
+        while(peek("[^a-zA-Z0-9\"]")){
             // may be more efficent using advance()
             if(peek("\b|\n|\r|\t")){
                 lexEscape();
                 throw new ParseException("Parse exception: escape in operator", chars.index);
             }
-            match("[^a-zA-Z0-9]");
+            else if(!peek("[<>!]")){
+                match("[^a-zA-Z0-9\"]");
+                return chars.emit(Token.Type.OPERATOR);
+            }
+            match("[^a-zA-Z0-9\"]");
         }
         return chars.emit(Token.Type.OPERATOR);
     }
