@@ -235,11 +235,41 @@ public final class Lexer {
                 lexEscape();
                 throw new ParseException("Parse exception: escape in operator", chars.index);
             }
-            else if(!peek("[<>!=+-]")){
+            else if(peek("!")){
+                match("!");
+                if(peek("=")){
+                    match("=");
+                }
+                return chars.emit(Token.Type.OPERATOR);
+            }
+            else if(peek("=")){
+                match("=");
+                if(peek("=")){
+                    match("=");
+                }
+                return chars.emit(Token.Type.OPERATOR);
+            }
+            else if(peek("&")){
+                match("&");
+                if(peek("&")){
+                    match("&");
+                    return chars.emit(Token.Type.OPERATOR);
+                } else {
+                    throw new ParseException("Parse exception: unterminated &&", chars.index);
+                }
+            }
+            else if(peek("\\|")){
+                match("\\|");
+                if(peek("\\|")){
+                    match("\\|");
+                    return chars.emit(Token.Type.OPERATOR);
+                } else {
+                    throw new ParseException("Parse exception: unterminated ||", chars.index);
+                }
+            } else {
                 match("[^a-zA-Z0-9\"]");
                 return chars.emit(Token.Type.OPERATOR);
             }
-            match("[^a-zA-Z0-9\"]");
         }
         return chars.emit(Token.Type.OPERATOR);
     }

@@ -120,15 +120,17 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Character", "(", true),
                 Arguments.of("Comparison", "!=", true),
-                Arguments.of("less than", "<=", true),
+                Arguments.of("less than", "<", true),
                 Arguments.of("Equality", "==", true),
-                Arguments.of("Increment", "++", true),
-                Arguments.of("Decrement", "--", true),
+                Arguments.of("And", "&&", true),
+                Arguments.of("Or", "||", true),
                 Arguments.of("Space", " ", false),
                 Arguments.of("Tab", "\t", false),
-
                 Arguments.of("Symbol", "$", true),
-                Arguments.of("Plus Sign", "+", true )
+                Arguments.of("Plus Sign", "+", true),
+                Arguments.of("Many =", "!====", false),
+                Arguments.of("Unterminated and", "&", false),
+                Arguments.of("Unterminated or", "|", false)
 
 
         );
