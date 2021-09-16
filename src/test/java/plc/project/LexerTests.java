@@ -23,8 +23,11 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "getName", true),
                 Arguments.of("Alphanumeric", "thelegend27", true),
                 Arguments.of("Underscore", "the_legend", true),
+                Arguments.of("Single character", "a", true),
+                Arguments.of("Hyphenated", "a-b-c", true),
                 Arguments.of("Leading Hyphen", "-five", false),
-                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false)
+                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false),
+                Arguments.of("onlyUnderscores", "___", false)
         );
     }
 
@@ -41,7 +44,9 @@ public class LexerTests {
                 Arguments.of("Negative", "-1", true),
                 Arguments.of("Zero", "0", true),
                 Arguments.of("Leading Zero", "01", false),
-                Arguments.of("Multiple negatives", "--1", false)
+                Arguments.of("Multiple negatives", "--1", false),
+                Arguments.of("Decimal", "123.456", false),
+                Arguments.of("Comma Separated", "1,234", false)
         );
     }
 
@@ -56,11 +61,14 @@ public class LexerTests {
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
                 Arguments.of("Zero", "0.0", true),
+                Arguments.of("Trailing zeros", "0.7000", true),
                 Arguments.of("Trailing Decimal", "1.", false),
                 Arguments.of("Leading Decimal", ".5", false),
                 Arguments.of("Leading Zeros", "000.3", false),
                 Arguments.of("Multiple decimals", "2.5.4", false),
-                Arguments.of("Multiple negatives", "--1.2", false)
+                Arguments.of("Multiple negatives", "--1.2", false),
+                Arguments.of("Single Digit", "1", false),
+                Arguments.of("Double decimal", "0..2", false)
         );
     }
 
@@ -75,7 +83,9 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "\'c\'", true),
                 Arguments.of("Newline Escape", "\'\\n\'", true),
                 Arguments.of("Empty", "\'\'", false),
-                Arguments.of("Multiple", "\'abc\'", false)
+                Arguments.of("Multiple", "\'abc\'", false),
+                Arguments.of("Unterminated", "'c", false),
+                Arguments.of("New line", "'\\n'", true)
         );
     }
 
@@ -91,7 +101,11 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "\"abc\"", true),
                 Arguments.of("Newline Escape", "\"Hello,\\nWorld\"", true),
                 Arguments.of("Unterminated", "\"unterminated", false),
-                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false)
+                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false),
+                Arguments.of("Symbols", "\"!@#$%^&*()\"", true),
+                Arguments.of("newline unterminated","\"unterminated\n\"", false)
+/*
+* */
         );
     }
 
@@ -111,7 +125,12 @@ public class LexerTests {
                 Arguments.of("Increment", "++", true),
                 Arguments.of("Decrement", "--", true),
                 Arguments.of("Space", " ", false),
-                Arguments.of("Tab", "\t", false)
+                Arguments.of("Tab", "\t", false),
+
+                Arguments.of("Symbol", "$", true),
+                Arguments.of("Plus Sign", "+", true )
+
+
         );
     }
 
@@ -167,6 +186,10 @@ public class LexerTests {
         ParseException leadingZeros = Assertions.assertThrows(ParseException.class,
                 () -> new Lexer("00224").lex());
         Assertions.assertEquals(1, leadingZeros.getIndex());
+
+        ParseException unterminatedChar = Assertions.assertThrows(ParseException.class,
+                () -> new Lexer("'u").lex());
+        Assertions.assertEquals(2, unterminatedChar.getIndex());
 
     }
 

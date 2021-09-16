@@ -192,6 +192,9 @@ public final class Lexer {
 
         while(peek("[^\"]")){
             if(peek("\b|\n|\r|\t")){
+                if(peek("\n")){
+                    throw new ParseException("String on different line", chars.index);
+                }
                 lexEscape();
             } else if(peek("\\\\")){
                 match("\\\\");
@@ -275,8 +278,6 @@ public final class Lexer {
 
         }
         return peek;
-
-        //throw new UnsupportedOperationException(); //TODO (in Lecture)
     }
 
     /**
