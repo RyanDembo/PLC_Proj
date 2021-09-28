@@ -20,16 +20,14 @@ public class LexerTests {
 
     private static Stream<Arguments> testIdentifier() {
         return Stream.of(
-
-
-
-                Arguments.of("Alphabetic", "getName", true)
-                /*
+                Arguments.of("Alphabetic", "getName", true),
                 Arguments.of("Alphanumeric", "thelegend27", true),
+                Arguments.of("Underscore", "the_legend", true),
+                Arguments.of("Single character", "a", true),
+                Arguments.of("Hyphenated", "a-b-c", true),
                 Arguments.of("Leading Hyphen", "-five", false),
-                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false)
-
-                 */
+                Arguments.of("Leading Digit", "1fish2fish3fishbluefish", false),
+                Arguments.of("onlyUnderscores", "___", false)
         );
     }
 
@@ -44,7 +42,11 @@ public class LexerTests {
                 Arguments.of("Single Digit", "1", true),
                 Arguments.of("Multiple Digits", "12345", true),
                 Arguments.of("Negative", "-1", true),
-                Arguments.of("Leading Zero", "01", false)
+                Arguments.of("Zero", "0", true),
+                Arguments.of("Leading Zero", "01", false),
+                Arguments.of("Multiple negatives", "--1", false),
+                Arguments.of("Decimal", "123.456", false),
+                Arguments.of("Comma Separated", "1,234", false)
         );
     }
 
@@ -58,8 +60,15 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Multiple Digits", "123.456", true),
                 Arguments.of("Negative Decimal", "-1.0", true),
+                Arguments.of("Zero", "0.0", true),
+                Arguments.of("Trailing zeros", "0.7000", true),
                 Arguments.of("Trailing Decimal", "1.", false),
-                Arguments.of("Leading Decimal", ".5", false)
+                Arguments.of("Leading Decimal", ".5", false),
+                Arguments.of("Leading Zeros", "000.3", false),
+                Arguments.of("Multiple decimals", "2.5.4", false),
+                Arguments.of("Multiple negatives", "--1.2", false),
+                Arguments.of("Single Digit", "1", false),
+                Arguments.of("Double decimal", "0..2", false)
         );
     }
 
@@ -74,7 +83,9 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "\'c\'", true),
                 Arguments.of("Newline Escape", "\'\\n\'", true),
                 Arguments.of("Empty", "\'\'", false),
-                Arguments.of("Multiple", "\'abc\'", false)
+                Arguments.of("Multiple", "\'abc\'", false),
+                Arguments.of("Unterminated", "'c", false),
+                Arguments.of("New line", "'\\n'", true)
         );
     }
 
@@ -90,7 +101,11 @@ public class LexerTests {
                 Arguments.of("Alphabetic", "\"abc\"", true),
                 Arguments.of("Newline Escape", "\"Hello,\\nWorld\"", true),
                 Arguments.of("Unterminated", "\"unterminated", false),
-                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false)
+                Arguments.of("Invalid Escape", "\"invalid\\escape\"", false),
+                Arguments.of("Symbols", "\"!@#$%^&*()\"", true),
+                Arguments.of("newline unterminated","\"unterminated\n\"", false)
+/*
+* */
         );
     }
 
@@ -105,8 +120,19 @@ public class LexerTests {
         return Stream.of(
                 Arguments.of("Character", "(", true),
                 Arguments.of("Comparison", "!=", true),
+                Arguments.of("less than", "<", true),
+                Arguments.of("Equality", "==", true),
+                Arguments.of("And", "&&", true),
+                Arguments.of("Or", "||", true),
                 Arguments.of("Space", " ", false),
-                Arguments.of("Tab", "\t", false)
+                Arguments.of("Tab", "\t", false),
+                Arguments.of("Symbol", "$", true),
+                Arguments.of("Plus Sign", "+", true),
+                Arguments.of("Many =", "!====", false),
+                Arguments.of("Unterminated and", "&", false),
+                Arguments.of("Unterminated or", "|", false)
+
+
         );
     }
 
@@ -131,6 +157,22 @@ public class LexerTests {
                         new Token(Token.Type.STRING, "\"Hello, World!\"", 6),
                         new Token(Token.Type.OPERATOR, ")", 21),
                         new Token(Token.Type.OPERATOR, ";", 22)
+                )),
+                Arguments.of("Example 3", "while(x < 5) {x = x + 1;}", Arrays.asList(
+                        new Token(Token.Type.IDENTIFIER,"while", 0),
+                        new Token(Token.Type.OPERATOR, "(", 5),
+                        new Token(Token.Type.IDENTIFIER,"x", 6),
+                        new Token(Token.Type.OPERATOR, "<", 8),
+                        new Token(Token.Type.INTEGER, "5", 10),
+                        new Token(Token.Type.OPERATOR, ")", 11),
+                        new Token(Token.Type.OPERATOR, "{", 13),
+                        new Token(Token.Type.IDENTIFIER,"x", 14),
+                        new Token(Token.Type.OPERATOR, "=", 16),
+                        new Token(Token.Type.IDENTIFIER,"x", 18),
+                        new Token(Token.Type.OPERATOR, "+", 20),
+                        new Token(Token.Type.INTEGER, "1", 22),
+                        new Token(Token.Type.OPERATOR, ";", 23),
+                        new Token(Token.Type.OPERATOR, "}", 24)
                 ))
         );
     }
@@ -140,6 +182,17 @@ public class LexerTests {
         ParseException exception = Assertions.assertThrows(ParseException.class,
                 () -> new Lexer("\"unterminated").lex());
         Assertions.assertEquals(13, exception.getIndex());
+
+        //other tests to write: unterminated chararacter, invalid escape, leading zeros
+
+        ParseException leadingZeros = Assertions.assertThrows(ParseException.class,
+                () -> new Lexer("00224").lex());
+        Assertions.assertEquals(1, leadingZeros.getIndex());
+
+        ParseException unterminatedChar = Assertions.assertThrows(ParseException.class,
+                () -> new Lexer("'u").lex());
+        Assertions.assertEquals(2, unterminatedChar.getIndex());
+
     }
 
     /**
