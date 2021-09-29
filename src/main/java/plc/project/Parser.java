@@ -90,7 +90,18 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        Ast.Statement.Expression expression = new Ast.Statement.Expression(parseExpression());
+        if(tokens.has(1)){
+            if(match("=")){
+                Ast.Expression exp1 = parseExpression();
+                Ast.Statement.Assignment expAssign = new Ast.Statement.Assignment(exp1, parseExpression());
+                return expAssign;
+            }else{
+                throw new ParseException("invalid expression", tokens.get(0).getIndex());
+            }
+        }
+        return expression;
     }
 
     /**
@@ -151,53 +162,100 @@ public final class Parser {
      * Parses the {@code expression} rule.
      */
     public Ast.Expression parseExpression() throws ParseException {
-       // throw new UnsupportedOperationException(); //TODO
-        return parseMultiplicativeExpression();
+
+        return parseLogicalExpression();
     }
 
     /**
      * Parses the {@code logical-expression} rule.
      */
     public Ast.Expression parseLogicalExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+
+        Ast.Expression compExpression = parseComparisonExpression();
+
+        if(tokens.has(1) && (match("&&") || match("||"))){
+            String strOp = tokens.get(-1).getLiteral();
+
+            Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, compExpression, parseComparisonExpression());
+
+            while(tokens.has(1) && (match("&&") || match("||"))){
+                strOp = tokens.get(-1).getLiteral();
+                if(tokens.has(1)){
+                    expression = new Ast.Expression.Binary(strOp, expression, parseComparisonExpression());
+                }else{
+                    throw new ParseException("invalid comparison", tokens.get(0).getIndex() + 1);
+                }
+            }
+            return expression;
+        }
+        return compExpression;
     }
 
     /**
      * Parses the {@code equality-expression} rule.
      */
     public Ast.Expression parseComparisonExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+
+        Ast.Expression addExpression = parseAdditiveExpression();
+
+        if(tokens.has(1) && (match("<") || match(">") || match("==") || match("!="))){
+            String strOp = tokens.get(-1).getLiteral();
+            Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, addExpression, parseAdditiveExpression());
+
+            while(tokens.has(1) && (match("<") || match(">") || match("==") || match("!="))){
+                strOp = tokens.get(-1).getLiteral();
+
+                if(tokens.has(1)){
+                    expression = new Ast.Expression.Binary(strOp, expression, parseAdditiveExpression());
+                }else{
+                    throw new ParseException("invalid comparison", tokens.get(0).getIndex() + 1);
+                }
+            }
+            return expression;
+        }
+        return addExpression;
     }
 
     /**
      * Parses the {@code additive-expression} rule.
      */
     public Ast.Expression parseAdditiveExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        Ast.Expression multExpression = parseMultiplicativeExpression();
+
+        if(tokens.has(1) && (match("+") || match("-"))){
+            String strOp = tokens.get(-1).getLiteral();
+            Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, multExpression, parseMultiplicativeExpression());
+
+            while(tokens.has(1) && (match("+") || match("-"))){
+                strOp = tokens.get(-1).getLiteral();
+                if(tokens.has(1)){
+                    expression = new Ast.Expression.Binary(strOp, expression, parseMultiplicativeExpression());
+                }else{
+                    throw new ParseException("invalid additive", tokens.get(0).getIndex() + 1);
+                }
+            }
+            return expression;
+        }
+        return multExpression;
     }
 
     /**
      * Parses the {@code multiplicative-expression} rule.
      */
     public Ast.Expression parseMultiplicativeExpression() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
         Ast.Expression primExpression = parsePrimaryExpression();
-// wat if x */^ z
-        if(tokens.has(1) && (peek("*") || peek("/") || peek("^"))){
-            match(Token.Type.OPERATOR);
+
+        if(tokens.has(1) && (match("*") || match("/") || match("^"))){
             String strOp = tokens.get(-1).getLiteral();
-            if(!tokens.has(0)){
-                throw new ParseException("invalid multiplicative", tokens.get(0).getIndex());
-            }
+
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
 
-            while(tokens.has(1) && (peek("*") || peek("/") || peek("^"))){
-                match(Token.Type.OPERATOR);
-                strOp = tokens.get(-1).getLiteral();
-                if(tokens.has(0)){
-                    expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
+            while(tokens.has(1) && (match("*") || match("/") || match("^"))){
+                strOp = tokens.get(0).getLiteral();
+                if(tokens.has(1)){
+                    expression = new Ast.Expression.Binary(strOp, expression, parsePrimaryExpression());
                 }else{
-                    throw new ParseException("invalid multiplicative", tokens.get(0).getIndex());
+                    throw new ParseException("invalid multiplicative", tokens.get(0).getIndex() + 1);
                 }
             }
             return expression;
