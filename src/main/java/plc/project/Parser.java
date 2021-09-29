@@ -1,5 +1,9 @@
 package plc.project;
 
+import jdk.nashorn.internal.parser.TokenType;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 /**
@@ -145,7 +149,8 @@ public final class Parser {
      * Parses the {@code expression} rule.
      */
     public Ast.Expression parseExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+       // throw new UnsupportedOperationException(); //TODO
+        return parsePrimaryExpression();
     }
 
     /**
@@ -183,7 +188,66 @@ public final class Parser {
      * not strictly necessary.
      */
     public Ast.Expression parsePrimaryExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        if(match("NIL")){
+            return new Ast.Expression.Literal(null);
+        }
+        else if(match("TRUE")){
+            return new Ast.Expression.Literal(new Boolean(true));
+        }
+        else if(match("FALSE")){
+            return new Ast.Expression.Literal(new Boolean(false));
+        }
+        else if(match(Token.Type.INTEGER)){
+            String strInt = tokens.get(-1).getLiteral();
+            //idk if 'new' necessary before BigInteger()
+            return new Ast.Expression.Literal(new BigInteger(strInt));
+        }
+        else if(match(Token.Type.DECIMAL)){
+            String strDec = tokens.get(-1).getLiteral();
+
+            return new Ast.Expression.Literal(new BigDecimal(strDec));
+        }
+        else if(match(Token.Type.CHARACTER)){
+            String Lit = tokens.get(-1).getLiteral();
+                // HELP
+            Lit = Lit.replace("\'", "");
+            Lit = Lit.replace("\\", "");
+
+            Lit = Lit.replace("\\b", "\b");
+            Lit = Lit.replace("\\n", "\n");
+            Lit = Lit.replace("\\r", "\r");
+            Lit = Lit.replace("\\t", "\t");
+            Lit = Lit.replace("\\'", "\'");
+            Lit = Lit.replace("\\\"", "\""); // IDK
+            Lit = Lit.replace("\\\\", "\\");
+
+            char c = Lit.charAt(0);
+            return new Ast.Expression.Literal(new Character(c));
+        }
+        else if(match(Token.Type.STRING)){
+            String Lit = tokens.get(-1).getLiteral();
+            // HELP could be error in removing \" characters inside string (not at ends) TODO
+            Lit = Lit.replace("\"", "");
+
+
+
+            Lit = Lit.replace("\\b", "\b");
+            Lit = Lit.replace("\\n", "\n");
+            Lit = Lit.replace("\\r", "\r");
+            Lit = Lit.replace("\\t", "\t");
+            Lit = Lit.replace("\\'", "\'");
+            Lit = Lit.replace("\\\"", "\""); // IDK
+            Lit = Lit.replace("\\\\", "\\");
+
+
+            return new Ast.Expression.Literal(new String(Lit));
+        }
+
+
+        else {
+            throw new ParseException("Invalid primary expession", tokens.get(0).getIndex());
+        }
     }
 
     /**
