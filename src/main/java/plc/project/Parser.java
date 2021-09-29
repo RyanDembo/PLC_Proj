@@ -90,17 +90,26 @@ public final class Parser {
      * statement, then it is an expression/assignment statement.
      */
     public Ast.Statement parseStatement() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
-        Ast.Statement.Expression expression = new Ast.Statement.Expression(parseExpression());
+        Ast.Expression exp = parseExpression();
+
+        Ast.Statement.Expression expression = new Ast.Statement.Expression(exp);
         if(tokens.has(1)){
             if(match("=")){
                 Ast.Expression exp1 = parseExpression();
-                Ast.Statement.Assignment expAssign = new Ast.Statement.Assignment(exp1, parseExpression());
-                return expAssign;
+                if(!match(";")){
+                    throw new ParseException("Missing Semicolon", tokens.get(0).getIndex());
+                }
+
+                return new Ast.Statement.Assignment(exp, exp1);
             }else{
                 throw new ParseException("invalid expression", tokens.get(0).getIndex());
             }
+
         }
+        if(!match(";")){
+            throw new ParseException("Missing Semicolon", tokens.get(0).getIndex());
+        }
+
         return expression;
     }
 
@@ -326,8 +335,7 @@ public final class Parser {
             return new Ast.Expression.Literal(new String(Lit));
         }
         else if(match("(")){
-            //new?
-            Ast.Expression exp = parseExpression();
+            Ast.Expression.Group exp = new Ast.Expression.Group(parseExpression());
             if(!match(")")){
                 //not 100% sure about index offset
                 throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
@@ -375,12 +383,15 @@ public final class Parser {
 
             }
             else if(match("[")){
+                if(match("]")){
+                    return new Ast.Expression.Access(Optional.empty(), name);
+                }
                 Ast.Expression exp = parseExpression();
                 if(!match("]")){
                     throw new ParseException("Expected closing bracket.", tokens.get(0).getIndex());
                 }
                 //not sure if necessary
-                return new Ast.Expression.Access(Optional.empty(), name);
+                return new Ast.Expression.Access(Optional.of(exp), name);
             }
 
             return new Ast.Expression.Access(Optional.empty(), name);
