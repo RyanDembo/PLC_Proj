@@ -142,6 +142,7 @@ final class ParserExpressionTests {
 
     private static Stream<Arguments> testBinaryExpression() {
         return Stream.of(
+
                 Arguments.of("Binary And",
                         Arrays.asList(
                                 //expr1 && expr2

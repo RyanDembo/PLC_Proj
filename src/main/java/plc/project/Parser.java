@@ -4,6 +4,7 @@ import jdk.nashorn.internal.parser.TokenType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -181,20 +182,22 @@ public final class Parser {
     public Ast.Expression parseMultiplicativeExpression() throws ParseException {
         //throw new UnsupportedOperationException(); //TODO
         Ast.Expression primExpression = parsePrimaryExpression();
-
-        if(tokens.has(1) && match("*|/|^")){
+// wat if x */^ z
+        if(tokens.has(1) && (peek("*") || peek("/") || peek("^"))){
+            match(Token.Type.OPERATOR);
             String strOp = tokens.get(-1).getLiteral();
-            if(!tokens.has(1)){
-                throw new ParseException("invalid multiplicative", tokens.index + 1);
+            if(!tokens.has(0)){
+                throw new ParseException("invalid multiplicative", tokens.get(0).getIndex());
             }
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
 
-            while(tokens.has(1) && match("*|/|^")){
+            while(tokens.has(1) && (peek("*") || peek("/") || peek("^"))){
+                match(Token.Type.OPERATOR);
                 strOp = tokens.get(-1).getLiteral();
-                if(tokens.has(1)){
+                if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
                 }else{
-                    throw new ParseException("invalid multiplicative", tokens.index + 1);
+                    throw new ParseException("invalid multiplicative", tokens.get(0).getIndex());
                 }
             }
             return expression;
@@ -277,7 +280,43 @@ public final class Parser {
         else if(match(Token.Type.IDENTIFIER)){
             String name = tokens.get(-1).getLiteral();
 
-            if(match("[")){
+
+            if(match("(")){
+                //function
+
+                List<Ast.Expression> args = new ArrayList<>(); // may be wrong idk list must be initilized
+                // CAN WE USE ARRAYLIST
+
+                if(match(")")){
+                    return new Ast.Expression.Function(name, args);
+                                        //Collections.emptyList?
+
+                }
+                //must have at least 1 arg
+
+                Ast.Expression exp = parseExpression();
+                args.add(exp);
+                while(tokens.has(1) && (!match(")"))){
+                    if(!match(",")){
+                        throw new ParseException("Expected comma separating arguments.", tokens.get(0).getIndex());
+                    }
+
+                    Ast.Expression exp1 = parseExpression();
+                    args.add(exp1);
+
+
+
+                }
+
+
+                if(!")".equals(tokens.get(0).getLiteral())){
+                    //function doesnt close ()
+                    throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
+                }
+                return new Ast.Expression.Function(name, args);
+
+            }
+            else if(match("[")){
                 Ast.Expression exp = parseExpression();
                 if(!match("]")){
                     throw new ParseException("Expected closing bracket.", tokens.get(0).getIndex());
