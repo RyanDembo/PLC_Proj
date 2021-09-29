@@ -5,6 +5,7 @@ import jdk.nashorn.internal.parser.TokenType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The parser takes the sequence of tokens emitted by the lexer and turns that
@@ -150,7 +151,7 @@ public final class Parser {
      */
     public Ast.Expression parseExpression() throws ParseException {
        // throw new UnsupportedOperationException(); //TODO
-        return parsePrimaryExpression();
+        return parseMultiplicativeExpression();
     }
 
     /**
@@ -178,7 +179,27 @@ public final class Parser {
      * Parses the {@code multiplicative-expression} rule.
      */
     public Ast.Expression parseMultiplicativeExpression() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        Ast.Expression primExpression = parsePrimaryExpression();
+
+        if(tokens.has(1) && match("*|/|^")){
+            String strOp = tokens.get(-1).getLiteral();
+            if(!tokens.has(1)){
+                throw new ParseException("invalid multiplicative", tokens.index + 1);
+            }
+            Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
+
+            while(tokens.has(1) && match("*|/|^")){
+                strOp = tokens.get(-1).getLiteral();
+                if(tokens.has(1)){
+                    expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
+                }else{
+                    throw new ParseException("invalid multiplicative", tokens.index + 1);
+                }
+            }
+            return expression;
+        }
+        return primExpression;
     }
 
     /**
@@ -243,7 +264,30 @@ public final class Parser {
 
             return new Ast.Expression.Literal(new String(Lit));
         }
+        else if(match("(")){
+            //new?
+            Ast.Expression exp = parseExpression();
+            if(!match(")")){
+                //not 100% sure about index offset
+                throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
+            }
 
+            return exp;
+        }
+        else if(match(Token.Type.IDENTIFIER)){
+            String name = tokens.get(-1).getLiteral();
+
+            if(match("[")){
+                Ast.Expression exp = parseExpression();
+                if(!match("]")){
+                    throw new ParseException("Expected closing bracket.", tokens.get(0).getIndex());
+                }
+                //not sure if necessary
+                return new Ast.Expression.Access(Optional.empty(), name);
+            }
+
+            return new Ast.Expression.Access(Optional.empty(), name);
+        }
 
         else {
             throw new ParseException("Invalid primary expession", tokens.get(0).getIndex());
