@@ -28,6 +28,7 @@ final class ParserExpressionTests {
 
     private static Stream<Arguments> testExpressionStatement() {
         return Stream.of(
+
                 Arguments.of("Function Expression",
                         Arrays.asList(
                                 //name();
@@ -37,8 +38,20 @@ final class ParserExpressionTests {
                                 new Token(Token.Type.OPERATOR, ";", 6)
                         ),
                         new Ast.Statement.Expression(new Ast.Expression.Function("name", Arrays.asList()))
+                ),
+                Arguments.of("missing semicolon",
+                        Arrays.asList(
+                                //0123456789
+                                //name();
+                                //expr;
+                                new Token(Token.Type.IDENTIFIER, "f", 0)
+
+                        ),
+                        new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "f"))
                 )
-        );
+
+
+                );
     }
 
     @ParameterizedTest
@@ -62,6 +75,7 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "value")
                         )
                 )
+
         );
     }
 
@@ -130,6 +144,19 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "expr1"),
                                 new Ast.Expression.Access(Optional.empty(), "expr2")
                         ))
+                ),
+                Arguments.of("Missing closing parenthesis",
+                        Arrays.asList(
+                                //0123456789
+                                //(expr
+                                new Token(Token.Type.OPERATOR, "(", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 1)
+
+                        ),
+                        new Ast.Expression.Group(new Ast.Expression.Binary("+",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        ))
                 )
         );
     }
@@ -187,6 +214,38 @@ final class ParserExpressionTests {
                                 new Token(Token.Type.IDENTIFIER, "expr2", 8)
                         ),
                         new Ast.Expression.Binary("*",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        )
+                ),
+
+                Arguments.of("missing operand",
+                        Arrays.asList(
+                                //0123456789
+                                //expr *
+                                new Token(Token.Type.IDENTIFIER, "expr", 0),
+                                new Token(Token.Type.OPERATOR, "*", 5)
+
+                        ),
+                        new Ast.Expression.Binary("*",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        )
+                ),
+                Arguments.of("priority",
+                        Arrays.asList(
+                                //          1         2
+                                //012345678901234567890123456789
+                                //expr1 == expr2 != expr3
+                                //
+                                new Token(Token.Type.IDENTIFIER, "expr1", 0),
+                                new Token(Token.Type.OPERATOR, "==", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 9),
+                                new Token(Token.Type.OPERATOR, "!=", 15),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 18)
+
+                        ),
+                        new Ast.Expression.Binary("==",
                                 new Ast.Expression.Access(Optional.empty(), "expr1"),
                                 new Ast.Expression.Access(Optional.empty(), "expr2")
                         )
