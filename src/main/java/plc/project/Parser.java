@@ -191,9 +191,9 @@ public final class Parser {
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, compExpression, parseComparisonExpression());
 
-            while(tokens.has(1) && (match("&&") || match("||"))){
+            while(tokens.has(0) && (match("&&") || match("||"))){
                 strOp = tokens.get(-1).getLiteral();
-                if(tokens.has(1)){
+                if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseComparisonExpression());
                 }else{
                     throw new ParseException("invalid logical", tokens.get(-1).getIndex() + 1);
@@ -220,7 +220,7 @@ public final class Parser {
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, addExpression, parseAdditiveExpression());
 
-            while(tokens.has(1) && (match("<") || match(">") || match("==") || match("!="))){
+            while(tokens.has(0) && (match("<") || match(">") || match("==") || match("!="))){
                 strOp = tokens.get(-1).getLiteral();
 
                 if(tokens.has(0)){
@@ -249,9 +249,9 @@ public final class Parser {
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, multExpression, parseMultiplicativeExpression());
 
-            while(tokens.has(1) && (match("+") || match("-"))){
+            while(tokens.has(0) && (match("+") || match("-"))){
                 strOp = tokens.get(-1).getLiteral();
-                if(tokens.has(1)){
+                if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseMultiplicativeExpression());
                 }else{
                     throw new ParseException("invalid additive", tokens.get(-1).getIndex() + 1);
@@ -277,9 +277,9 @@ public final class Parser {
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
 
-            while(tokens.has(1) && (match("*") || match("/") || match("^"))){
+            while(tokens.has(0) && (match("*") || match("/") || match("^"))){
                 strOp = tokens.get(0).getLiteral();
-                if(tokens.has(1)){
+                if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parsePrimaryExpression());
                 }else{
                     throw new ParseException("invalid multiplicative", tokens.get(-1).getIndex()+1);
