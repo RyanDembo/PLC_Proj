@@ -97,17 +97,17 @@ public final class Parser {
             if(match("=")){
                 Ast.Expression exp1 = parseExpression();
                 if(!match(";")){
-                    throw new ParseException("Missing Semicolon", tokens.get(0).getIndex());
+                    throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+1);
                 }
 
                 return new Ast.Statement.Assignment(exp, exp1);
             }else{
-                throw new ParseException("invalid expression", tokens.get(0).getIndex());
+                throw new ParseException("invalid expression", tokens.get(-1).getIndex()+1);
             }
 
         }
         if(!match(";")){
-            throw new ParseException("Missing Semicolon", tokens.get(0).getIndex());
+            throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+1);
         }
 
         return expression;
@@ -182,8 +182,12 @@ public final class Parser {
 
         Ast.Expression compExpression = parseComparisonExpression();
 
-        if(tokens.has(1) && (match("&&") || match("||"))){
+        if(tokens.has(0) && (match("&&") || match("||"))){
             String strOp = tokens.get(-1).getLiteral();
+
+            if(!tokens.has(0)){
+                throw new ParseException("invalid logical", tokens.get(-1).getIndex() + 1);
+            }
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, compExpression, parseComparisonExpression());
 
@@ -192,7 +196,7 @@ public final class Parser {
                 if(tokens.has(1)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseComparisonExpression());
                 }else{
-                    throw new ParseException("invalid comparison", tokens.get(0).getIndex() + 1);
+                    throw new ParseException("invalid logical", tokens.get(-1).getIndex() + 1);
                 }
             }
             return expression;
@@ -207,17 +211,22 @@ public final class Parser {
 
         Ast.Expression addExpression = parseAdditiveExpression();
 
-        if(tokens.has(1) && (match("<") || match(">") || match("==") || match("!="))){
+        if(tokens.has(0) && (match("<") || match(">") || match("==") || match("!="))){
             String strOp = tokens.get(-1).getLiteral();
+
+            if(!tokens.has(0)){
+                throw new ParseException("invalid comparison", tokens.get(-1).getIndex() + 1);
+            }
+
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, addExpression, parseAdditiveExpression());
 
             while(tokens.has(1) && (match("<") || match(">") || match("==") || match("!="))){
                 strOp = tokens.get(-1).getLiteral();
 
-                if(tokens.has(1)){
+                if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseAdditiveExpression());
                 }else{
-                    throw new ParseException("invalid comparison", tokens.get(0).getIndex() + 1);
+                    throw new ParseException("invalid comparison", tokens.get(-1).getIndex() + 1);
                 }
             }
             return expression;
@@ -231,8 +240,13 @@ public final class Parser {
     public Ast.Expression parseAdditiveExpression() throws ParseException {
         Ast.Expression multExpression = parseMultiplicativeExpression();
 
-        if(tokens.has(1) && (match("+") || match("-"))){
+        if(tokens.has(0) && (match("+") || match("-"))){
             String strOp = tokens.get(-1).getLiteral();
+
+            if(!tokens.has(0)){
+                throw new ParseException("invalid additive", tokens.get(-1).getIndex() + 1);
+            }
+
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, multExpression, parseMultiplicativeExpression());
 
             while(tokens.has(1) && (match("+") || match("-"))){
@@ -240,7 +254,7 @@ public final class Parser {
                 if(tokens.has(1)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseMultiplicativeExpression());
                 }else{
-                    throw new ParseException("invalid additive", tokens.get(0).getIndex() + 1);
+                    throw new ParseException("invalid additive", tokens.get(-1).getIndex() + 1);
                 }
             }
             return expression;
@@ -254,8 +268,12 @@ public final class Parser {
     public Ast.Expression parseMultiplicativeExpression() throws ParseException {
         Ast.Expression primExpression = parsePrimaryExpression();
 
-        if(tokens.has(1) && (match("*") || match("/") || match("^"))){
+        if(tokens.has(0) && (match("*") || match("/") || match("^"))){
             String strOp = tokens.get(-1).getLiteral();
+
+            if(!tokens.has(0)){
+                throw new ParseException("invalid multiplicative", tokens.get(-1).getIndex()+1);
+            }
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
 
@@ -264,7 +282,7 @@ public final class Parser {
                 if(tokens.has(1)){
                     expression = new Ast.Expression.Binary(strOp, expression, parsePrimaryExpression());
                 }else{
-                    throw new ParseException("invalid multiplicative", tokens.get(0).getIndex() + 1);
+                    throw new ParseException("invalid multiplicative", tokens.get(-1).getIndex()+1);
                 }
             }
             return expression;
@@ -338,7 +356,7 @@ public final class Parser {
             Ast.Expression.Group exp = new Ast.Expression.Group(parseExpression());
             if(!match(")")){
                 //not 100% sure about index offset
-                throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
+                throw new ParseException("Expected closing parenthesis.", tokens.get(-1).getIndex()+1);
             }
 
             return exp;
@@ -388,7 +406,7 @@ public final class Parser {
                 }
                 Ast.Expression exp = parseExpression();
                 if(!match("]")){
-                    throw new ParseException("Expected closing bracket.", tokens.get(0).getIndex());
+                    throw new ParseException("Expected closing bracket.", tokens.get(-1).getIndex()+1);
                 }
                 //not sure if necessary
                 return new Ast.Expression.Access(Optional.of(exp), name);
@@ -398,7 +416,7 @@ public final class Parser {
         }
 
         else {
-            throw new ParseException("Invalid primary expession", tokens.get(0).getIndex());
+            throw new ParseException("Invalid primary expession", tokens.get(-1).getIndex()+1);
         }
     }
 
