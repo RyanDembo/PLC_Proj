@@ -97,7 +97,15 @@ public final class Parser {
             if(match("=")){
                 Ast.Expression exp1 = parseExpression();
                 if(!match(";")){
-                    throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+1);
+
+                    if(tokens.has(0)) {
+                        //System.out.println(tokens.get(0).getIndex());
+                        throw new ParseException("Missing Semicolon", tokens.get(0).getIndex());
+                    }
+                    else{
+                        //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                        throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    }
                 }
 
                 return new Ast.Statement.Assignment(exp, exp1);
@@ -107,7 +115,15 @@ public final class Parser {
 
         }
         if(!match(";")){
-            throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+1);
+            //System.out.println(tokens.get(0).getIndex());
+            if(tokens.has(0)) {
+                //System.out.println(tokens.get(0).getIndex());
+                throw new ParseException("Missing Semicolon", tokens.get(0).getIndex());
+            }
+            else{
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
         }
 
         return expression;
@@ -392,15 +408,15 @@ public final class Parser {
 
                 Ast.Expression exp = parseExpression();
                 args.add(exp);
+                //funct(stuff,
                 while(tokens.has(1) && (!match(")"))){
                     if(!match(",")){
+                        //System.out.println(tokens.get(0).getIndex());
                         throw new ParseException("Expected comma separating arguments.", tokens.get(0).getIndex());
                     }
 
                     Ast.Expression exp1 = parseExpression();
                     args.add(exp1);
-
-
 
                 }
 
@@ -428,7 +444,16 @@ public final class Parser {
         }
 
         else {
-            throw new ParseException("Invalid primary expession", tokens.get(-1).getIndex()+1);
+            // when inputtng ? , only one index (0)
+            if(tokens.has(0)){
+                //System.out.println(tokens.get(0).getIndex());
+                throw new ParseException("Invalid primary expession", tokens.get(0).getIndex());
+            }
+            else{
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("Missing primary expession", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+
         }
     }
 

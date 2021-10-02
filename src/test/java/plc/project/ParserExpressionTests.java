@@ -39,12 +39,16 @@ final class ParserExpressionTests {
                         ),
                         new Ast.Statement.Expression(new Ast.Expression.Function("name", Arrays.asList()))
                 ),
-                Arguments.of("missing semicolon",
+                Arguments.of("one index",
                         Arrays.asList(
-                                //0123456789
+                                //          1
+                                //0123456789012345
                                 //name();
                                 //expr;
-                                new Token(Token.Type.IDENTIFIER, "f", 0)
+                                //fkvbsv = // 12
+                                new Token(Token.Type.IDENTIFIER, "f", 0),
+                                new Token(Token.Type.OPERATOR, ";", 1)
+
 
                         ),
                         new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "f"))
@@ -62,6 +66,7 @@ final class ParserExpressionTests {
 
     private static Stream<Arguments> testAssignmentStatement() {
         return Stream.of(
+
                 Arguments.of("Assignment",
                         Arrays.asList(
                                 //name = value;
@@ -74,8 +79,21 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "name"),
                                 new Ast.Expression.Access(Optional.empty(), "value")
                         )
-                )
+                ),
 
+
+                Arguments.of("BAD Assignment",
+                        Arrays.asList(
+                                //01234567
+                                //name =
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "=", 5)
+                        ),
+                        new Ast.Statement.Assignment(
+                                new Ast.Expression.Access(Optional.empty(), "name"),
+                                new Ast.Expression.Access(Optional.empty(), "value")
+                        )
+                )
         );
     }
 
@@ -163,6 +181,19 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "expr1"),
                                 new Ast.Expression.Access(Optional.empty(), "expr2")
                         ))
+                ),
+                Arguments.of("invalid expression",
+                        Arrays.asList(
+                                //0123456789
+
+                                new Token(Token.Type.OPERATOR, "?", 0)
+
+
+                        ),
+                        new Ast.Expression.Group(new Ast.Expression.Binary("+",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        ))
                 )
         );
     }
@@ -231,6 +262,20 @@ final class ParserExpressionTests {
                                 //expr *
                                 new Token(Token.Type.IDENTIFIER, "expr", 0),
                                 new Token(Token.Type.OPERATOR, "*", 5)
+
+                        ),
+                        new Ast.Expression.Binary("*",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        )
+                ),
+                Arguments.of("invalid multiplication",
+                        Arrays.asList(
+                                //0123456789
+                                //expr * 4
+                                new Token(Token.Type.IDENTIFIER, "expr", 0),
+                                new Token(Token.Type.OPERATOR, "*", 5),
+                                new Token(Token.Type.INTEGER, "4", 7)
 
                         ),
                         new Ast.Expression.Binary("*",
@@ -339,7 +384,48 @@ final class ParserExpressionTests {
                                 new Ast.Expression.Access(Optional.empty(), "expr2"),
                                 new Ast.Expression.Access(Optional.empty(), "expr3")
                         ))
+                ),
+                Arguments.of("Multiple Arguments, no commas",
+                        Arrays.asList(
+                                //         1         2
+                                //01234568901234567890123456789
+                                //name(expr1 expr2 expr3)
+                                //name(expr1,
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "(", 4),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 5),
+                                //new Token(Token.Type.OPERATOR, ",", 10),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 12),
+                               // new Token(Token.Type.OPERATOR, ",", 17),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 18),
+                                new Token(Token.Type.OPERATOR, ")", 23)
+                        ),
+                        new Ast.Expression.Function("name", Arrays.asList(
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2"),
+                                new Ast.Expression.Access(Optional.empty(), "expr3")
+                        ))
                 )
+/*
+                Arguments.of("missing closing",
+                        Arrays.asList(
+                                //         1         2
+                                //01234568901234567890123456789
+                                //name(expr1 expr2 expr3)
+                                //name(expr1,
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "(", 4),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 5),
+                                new Token(Token.Type.OPERATOR, ",", 10),
+
+                        ),
+                        new Ast.Expression.Function("name", Arrays.asList(
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2"),
+                                new Ast.Expression.Access(Optional.empty(), "expr3")
+                        ))
+                )
+*/
         );
     }
 
