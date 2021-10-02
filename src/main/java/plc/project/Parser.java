@@ -356,7 +356,19 @@ public final class Parser {
             Ast.Expression.Group exp = new Ast.Expression.Group(parseExpression());
             if(!match(")")){
                 //not 100% sure about index offset
-                throw new ParseException("Expected closing parenthesis.", tokens.get(-1).getIndex()+1);
+
+                //if theres a token where ) should be
+                if(tokens.has(0)){
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
+
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected closing parenthesis.", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+
+
             }
 
             return exp;

@@ -148,9 +148,15 @@ final class ParserExpressionTests {
                 Arguments.of("Missing closing parenthesis",
                         Arrays.asList(
                                 //0123456789
-                                //(expr
+                                //IF cond // should be 7
+                                //IF cond THEN  // should be 8
+                                //(expr] // should be 5?
+                                //(afuyb] (should be )
+
+                                //
                                 new Token(Token.Type.OPERATOR, "(", 0),
-                                new Token(Token.Type.IDENTIFIER, "expr", 1)
+                                new Token(Token.Type.IDENTIFIER, "expr", 1),
+                                new Token(Token.Type.OPERATOR, "]", 5)
 
                         ),
                         new Ast.Expression.Group(new Ast.Expression.Binary("+",
@@ -245,7 +251,28 @@ final class ParserExpressionTests {
                                 new Token(Token.Type.IDENTIFIER, "expr3", 18)
 
                         ),
-                        new Ast.Expression.Binary("==",
+                        new Ast.Expression.Binary("+",
+                                new Ast.Expression.Access(Optional.empty(), "expr1"),
+                                new Ast.Expression.Access(Optional.empty(), "expr2")
+                        )
+
+
+
+                ),
+                Arguments.of("Addition Multiplication",
+                        Arrays.asList(
+                                //          1         2
+                                //012345678901234567890123456789
+                                //expr1 + expr2 * expr3
+                                //
+                                new Token(Token.Type.IDENTIFIER, "expr1", 0),
+                                new Token(Token.Type.OPERATOR, "+", 6),
+                                new Token(Token.Type.IDENTIFIER, "expr2", 8),
+                                new Token(Token.Type.OPERATOR, "*", 14),
+                                new Token(Token.Type.IDENTIFIER, "expr3", 16)
+
+                        ),
+                        new Ast.Expression.Binary("+",
                                 new Ast.Expression.Access(Optional.empty(), "expr1"),
                                 new Ast.Expression.Access(Optional.empty(), "expr2")
                         )
