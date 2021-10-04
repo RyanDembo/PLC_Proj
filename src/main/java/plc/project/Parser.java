@@ -33,7 +33,14 @@ public final class Parser {
      * Parses the {@code source} rule.
      */
     public Ast.Source parseSource() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        // INCOMPLETE
+        List<Ast.Global> globes = new ArrayList<>();
+        List<Ast.Function> functs = new ArrayList<>();
+
+        functs.add(parseFunction());
+
+        return new Ast.Source(globes, functs);
     }
 
     /**
@@ -73,12 +80,151 @@ public final class Parser {
      * next tokens start a method, aka {@code DEF}.
      */
     public Ast.Function parseFunction() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
-/*
+        //throw new UnsupportedOperationException(); //TODO
+        //whole function may be bust if !match doesn't work as expected
         if(!match("FUN")){
-            throw new ParseException("Expected 'FUN' keyword", tokens.get(0).getIndex());
+            if(tokens.has(0)){
+                throw new ParseException("Expected 'FUN' keyword", tokens.get(0).getIndex());
+            }
+            else{
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected 'FUN' keyword", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+
         }
-        */
+
+        if(!match(Token.Type.IDENTIFIER)){
+            if(tokens.has(0)){
+                throw new ParseException("Expected Identifier", tokens.get(0).getIndex());
+            }
+            else{
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+        }
+
+        String fname = tokens.get(-1).getLiteral();
+
+        if(!match("(")){
+            if(tokens.has(0)){
+
+                throw new ParseException("Expected opening parenthesis.", tokens.get(0).getIndex());
+
+            }
+            else{
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected opening parenthesis.", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+        }
+        List<String> args = new ArrayList<>();
+
+        if(match(")")){
+            //no arguments
+
+
+            if(!match("DO")){
+                if(tokens.has(0)){
+                    throw new ParseException("Expected 'DO' keyword", tokens.get(0).getIndex());
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected 'DO' keyword", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+            }
+
+            List<Ast.Statement> stats = parseBlock();
+
+            if(!match("END")){
+                if(tokens.has(0)){
+                    throw new ParseException("Expected 'END' keyword", tokens.get(0).getIndex());
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected 'END' keyword", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+            }
+
+            return new Ast.Function(fname, args, stats);
+
+        }
+        else{
+            //must have at least 1 arg
+            // may need to use has(0)
+            if(!match(Token.Type.IDENTIFIER)){
+                if(tokens.has(0)){
+                    throw new ParseException("Expected Identifier", tokens.get(0).getIndex());
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+            }
+
+            String Aname = tokens.get(-1).getLiteral();
+            args.add(Aname);
+
+
+
+
+
+            //funct(stuff,
+            while(tokens.has(1) && (!match(")"))){
+                if(!match(",")){
+                    //System.out.println(tokens.get(0).getIndex());
+                    throw new ParseException("Expected comma separating arguments.", tokens.get(0).getIndex());
+                }
+
+                if(!match(Token.Type.IDENTIFIER)){
+                    if(tokens.has(0)){
+                        throw new ParseException("Expected Identifier", tokens.get(0).getIndex());
+                    }
+                    else{
+                        //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                        throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    }
+                }
+                String Aname2 = tokens.get(-1).getLiteral();
+                args.add(Aname2);
+            }
+
+
+            if(!tokens.has(0) || !")".equals(tokens.get(0).getLiteral())){
+                //function doesnt close ()
+                //funct(stuff
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("Expected closing parenthesis.", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+            //return new Ast.Function(fname, args, stats);
+
+            //List<Ast.Statement> stats = parseBlock();
+
+            if(!match("DO")){
+                if(tokens.has(0)){
+                    throw new ParseException("Expected 'DO' keyword", tokens.get(0).getIndex());
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected 'DO' keyword", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+            }
+
+            List<Ast.Statement> stats = parseBlock();
+
+            if(!match("END")){
+                if(tokens.has(0)){
+                    throw new ParseException("Expected 'END' keyword", tokens.get(0).getIndex());
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected 'END' keyword", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+            }
+
+            return new Ast.Function(fname, args, stats);
+
+        }
+
+
     }
 
     /**
@@ -90,7 +236,7 @@ public final class Parser {
         List<Ast.Statement> stats = new ArrayList<>();
 
         // not sure if covers zero statement case completely
-        if(tokens.has(0)){
+        if(!tokens.has(0)){
             return stats;
         }
 
