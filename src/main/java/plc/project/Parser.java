@@ -74,6 +74,11 @@ public final class Parser {
      */
     public Ast.Function parseFunction() throws ParseException {
         throw new UnsupportedOperationException(); //TODO
+/*
+        if(!match("FUN")){
+            throw new ParseException("Expected 'FUN' keyword", tokens.get(0).getIndex());
+        }
+        */
     }
 
     /**
@@ -81,7 +86,22 @@ public final class Parser {
      * preceding token indicates the opening a block.
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        List<Ast.Statement> stats = new ArrayList<>();
+
+        // not sure if covers zero statement case completely
+        if(tokens.has(0)){
+            return stats;
+        }
+
+        stats.add(parseStatement());
+
+        //not sure if will work properly
+        while(!peek("END") && !peek("CASE") && !peek("DEFAULT") && !peek("ELSE")){
+            stats.add(parseStatement());
+        }
+
+        return stats;
     }
 
     /**
