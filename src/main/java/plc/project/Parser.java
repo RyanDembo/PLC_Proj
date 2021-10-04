@@ -93,9 +93,21 @@ public final class Parser {
         Ast.Expression exp = parseExpression();
 
         Ast.Statement.Expression expression = new Ast.Statement.Expression(exp);
-        if(tokens.has(1)){
+        if(tokens.has(0)){
+
+            if(match(";")){
+                return expression;
+            }
+
             if(match("=")){
+
+                if(!tokens.has(0)){
+                   //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Missing RHS expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+
                 Ast.Expression exp1 = parseExpression();
+
                 if(!match(";")){
 
                     if(tokens.has(0)) {
@@ -110,7 +122,7 @@ public final class Parser {
 
                 return new Ast.Statement.Assignment(exp, exp1);
             }else{
-                throw new ParseException("invalid expression", tokens.get(-1).getIndex()+1);
+                throw new ParseException("invalid expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
 
         }
@@ -202,7 +214,7 @@ public final class Parser {
             String strOp = tokens.get(-1).getLiteral();
 
             if(!tokens.has(0)){
-                throw new ParseException("invalid logical", tokens.get(-1).getIndex() + 1);
+                throw new ParseException("missing logical RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, compExpression, parseComparisonExpression());
@@ -212,7 +224,7 @@ public final class Parser {
                 if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseComparisonExpression());
                 }else{
-                    throw new ParseException("invalid logical", tokens.get(-1).getIndex() + 1);
+                    throw new ParseException("missing logical RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
             }
             return expression;
@@ -231,7 +243,7 @@ public final class Parser {
             String strOp = tokens.get(-1).getLiteral();
 
             if(!tokens.has(0)){
-                throw new ParseException("invalid comparison", tokens.get(-1).getIndex() + 1);
+                throw new ParseException("missing comparison RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, addExpression, parseAdditiveExpression());
@@ -242,7 +254,7 @@ public final class Parser {
                 if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseAdditiveExpression());
                 }else{
-                    throw new ParseException("invalid comparison", tokens.get(-1).getIndex() + 1);
+                    throw new ParseException("missing comparison RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
             }
             return expression;
@@ -260,7 +272,7 @@ public final class Parser {
             String strOp = tokens.get(-1).getLiteral();
 
             if(!tokens.has(0)){
-                throw new ParseException("invalid additive", tokens.get(-1).getIndex() + 1);
+                throw new ParseException("missing additive RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, multExpression, parseMultiplicativeExpression());
@@ -270,7 +282,7 @@ public final class Parser {
                 if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parseMultiplicativeExpression());
                 }else{
-                    throw new ParseException("invalid additive", tokens.get(-1).getIndex() + 1);
+                    throw new ParseException("missing additive RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
             }
             return expression;
@@ -288,7 +300,8 @@ public final class Parser {
             String strOp = tokens.get(-1).getLiteral();
 
             if(!tokens.has(0)){
-                throw new ParseException("invalid multiplicative", tokens.get(-1).getIndex()+1);
+
+                throw new ParseException("missing multiplicative RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
 
             Ast.Expression.Binary expression = new Ast.Expression.Binary(strOp, primExpression, parsePrimaryExpression());
@@ -298,7 +311,8 @@ public final class Parser {
                 if(tokens.has(0)){
                     expression = new Ast.Expression.Binary(strOp, expression, parsePrimaryExpression());
                 }else{
-                    throw new ParseException("invalid multiplicative", tokens.get(-1).getIndex()+1);
+
+                    throw new ParseException("missing multiplicative RHS", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
             }
             return expression;
@@ -421,9 +435,11 @@ public final class Parser {
                 }
 
 
-                if(!")".equals(tokens.get(0).getLiteral())){
+                if(!tokens.has(0) || !")".equals(tokens.get(0).getLiteral())){
                     //function doesnt close ()
-                    throw new ParseException("Expected closing parenthesis.", tokens.get(0).getIndex());
+                    //funct(stuff
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected closing parenthesis.", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
                 return new Ast.Expression.Function(name, args);
 
@@ -434,7 +450,7 @@ public final class Parser {
                 }
                 Ast.Expression exp = parseExpression();
                 if(!match("]")){
-                    throw new ParseException("Expected closing bracket.", tokens.get(-1).getIndex()+1);
+                    throw new ParseException("Expected closing bracket.", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
                 //not sure if necessary
                 return new Ast.Expression.Access(Optional.of(exp), name);

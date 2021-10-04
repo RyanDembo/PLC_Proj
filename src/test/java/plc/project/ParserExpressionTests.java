@@ -367,6 +367,18 @@ final class ParserExpressionTests {
                         ),
                         new Ast.Expression.Function("name", Arrays.asList())
                 ),
+                Arguments.of("Missing Closing Paranthesis",
+                        Arrays.asList(
+                                //012345678901
+                                //name(expr1
+                                new Token(Token.Type.IDENTIFIER, "name", 0),
+                                new Token(Token.Type.OPERATOR, "(", 4),
+                                new Token(Token.Type.IDENTIFIER, "expr1", 5)
+                               // new Token(Token.Type.OPERATOR, ",", 10),
+                                //new Token(Token.Type.OPERATOR, ")", 11)
+                        ),
+                        new Ast.Expression.Function("name", Arrays.asList())
+                ),
                 Arguments.of("Multiple Arguments",
                         Arrays.asList(
                                 //name(expr1, expr2, expr3)
