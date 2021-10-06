@@ -38,7 +38,13 @@ public final class Parser {
         List<Ast.Global> globes = new ArrayList<>();
         List<Ast.Function> functs = new ArrayList<>();
 
-        functs.add(parseFunction());
+        while(tokens.has(0)){
+            if(peek("FUN")){
+                functs.add(parseFunction());
+            }else{
+                globes.add(parseGlobal());
+            }
+        }
 
         return new Ast.Source(globes, functs);
     }
@@ -48,7 +54,32 @@ public final class Parser {
      * next tokens start a field, aka {@code LET}.
      */
     public Ast.Global parseGlobal() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        if(match("LIST")){
+            Ast.Global list = parseList();
+            if(!match(";")){
+                throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+            return list;
+        }
+        else if(match("VAR")){
+            Ast.Global mutable = parseMutable();
+            if(!match(";")){
+                throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+            return mutable;
+        }
+        else if(match("VAL")){
+            Ast.Global immutable = parseImmutable();
+            if(!match(";")){
+                throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+            return immutable;
+        }else{
+            throw new ParseException("expected list, mutable, or immutable", 0);
+        }
+
     }
 
     /**
@@ -56,7 +87,43 @@ public final class Parser {
      * next token declares a list, aka {@code LIST}.
      */
     public Ast.Global parseList() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        if(!(tokens.has(0) && tokens.get(0).getType().equals(Token.Type.IDENTIFIER))){
+            throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+        String id = tokens.get(0).getLiteral();
+        tokens.advance();
+
+        if(!match("=")){
+            throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        if(!match("[")){
+            throw new ParseException("open bracket expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        if(!tokens.has(0)){
+            throw new ParseException("expected expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        List<Ast.Expression> expressions = new ArrayList<>();
+        expressions.add(parseExpression());
+
+        while(tokens.has(0)){
+            if(!match(",")){
+                throw new ParseException("comma expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+            expressions.add(parseExpression());
+        }
+
+        if(!match("]")){
+            throw new ParseException("closing bracket expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        Ast.Expression.PlcList exprList = new Ast.Expression.PlcList(expressions);
+        return new Ast.Global(id, true, Optional.of(exprList));
+
     }
 
     /**
@@ -64,7 +131,31 @@ public final class Parser {
      * next token declares a mutable global variable, aka {@code VAR}.
      */
     public Ast.Global parseMutable() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        if(!(tokens.has(0) && tokens.get(0).getType().equals(Token.Type.IDENTIFIER))){
+            throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        String id = tokens.get(0).getLiteral();
+        tokens.advance();
+
+        if(tokens.has(0)){
+            if(!match("=")){
+                throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+            if(!tokens.has(0)){
+                throw new ParseException("missing expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+
+            Ast.Expression expr = parseExpression();
+
+            return new Ast.Global(id, true, Optional.of(expr));
+
+        }else{
+            return new Ast.Global(id, true, Optional.empty());
+        }
+
     }
 
     /**
@@ -72,7 +163,27 @@ public final class Parser {
      * next token declares an immutable global variable, aka {@code VAL}.
      */
     public Ast.Global parseImmutable() throws ParseException {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        if(!(tokens.has(0) && tokens.get(0).getType().equals(Token.Type.IDENTIFIER))){
+            throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        String id = tokens.get(0).getLiteral();
+        tokens.advance();
+
+        if(!match("=")){
+            throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        if(!tokens.has(0)){
+            throw new ParseException("missing expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+
+        Ast.Expression expr = parseExpression();
+
+        return new Ast.Global(id, false, Optional.of(expr));
+
     }
 
     /**
@@ -80,7 +191,6 @@ public final class Parser {
      * next tokens start a method, aka {@code DEF}.
      */
     public Ast.Function parseFunction() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
         //whole function may be bust if !match doesn't work as expected
         if(!match("FUN")){
             if(tokens.has(0)){
@@ -90,7 +200,6 @@ public final class Parser {
                 //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 throw new ParseException("Expected 'FUN' keyword", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
-
         }
 
         if(!match(Token.Type.IDENTIFIER)){
@@ -98,7 +207,7 @@ public final class Parser {
                 throw new ParseException("Expected Identifier", tokens.get(0).getIndex());
             }
             else{
-                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 throw new ParseException("Expected Identifier", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
         }
@@ -232,7 +341,6 @@ public final class Parser {
      * preceding token indicates the opening a block.
      */
     public List<Ast.Statement> parseBlock() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
         List<Ast.Statement> stats = new ArrayList<>();
 
         // not sure if covers zero statement case completely
@@ -358,7 +466,6 @@ public final class Parser {
      * {@code IF}.
      */
     public Ast.Statement.If parseIfStatement() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
         Ast.Expression cond = parseExpression();
 
         if(match("DO")){
@@ -390,7 +497,6 @@ public final class Parser {
      * {@code SWITCH}.
      */
     public Ast.Statement.Switch parseSwitchStatement() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
 
         List<Ast.Statement.Case> cases = new ArrayList<>();
 
@@ -447,7 +553,6 @@ public final class Parser {
      * {@code WHILE}.
      */
     public Ast.Statement.While parseWhileStatement() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
 
         if(!tokens.has(0)){
             throw new ParseException("missing while expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
@@ -620,7 +725,6 @@ public final class Parser {
      * not strictly necessary.
      */
     public Ast.Expression parsePrimaryExpression() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
         if(match("NIL")){
             return new Ast.Expression.Literal(null);
         }
