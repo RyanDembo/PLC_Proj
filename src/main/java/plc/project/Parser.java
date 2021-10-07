@@ -820,7 +820,7 @@ public final class Parser {
                 Ast.Expression exp = parseExpression();
                 args.add(exp);
                 //funct(stuff,
-                while(tokens.has(1) && (!match(")"))){
+                while(tokens.has(0) && (!match(")"))){
                     if(!match(",")){
                         //System.out.println(tokens.get(0).getIndex());
                         throw new ParseException("Expected comma separating arguments.", tokens.get(0).getIndex());
@@ -832,7 +832,7 @@ public final class Parser {
                 }
 
 
-                if(!tokens.has(0) || !")".equals(tokens.get(0).getLiteral())){
+                if(!")".equals(tokens.get(-1).getLiteral())){
                     //function doesnt close ()
                     //funct(stuff
                     //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
