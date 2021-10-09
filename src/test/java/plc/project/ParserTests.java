@@ -46,6 +46,24 @@ final class ParserTests {
                                 Arrays.asList()
                         )
                 ),
+                Arguments.of("List",
+                        Arrays.asList(
+                                //          1
+                                //01234567890123456789
+                                //LIST list = [expr];
+                                new Token(Token.Type.IDENTIFIER, "LIST", 0),
+                                new Token(Token.Type.IDENTIFIER, "list", 5),
+                                new Token(Token.Type.OPERATOR, "=", 10),
+                                new Token(Token.Type.OPERATOR, "[", 12),
+                                new Token(Token.Type.IDENTIFIER, "expr", 13),
+                                new Token(Token.Type.OPERATOR, "]", 17),
+                                new Token(Token.Type.OPERATOR, ";", 18)
+                        ),
+                        new Ast.Source(
+                                Arrays.asList(new Ast.Global("list", true, Optional.of(new Ast.Expression.Access(Optional.empty(), "expr")))),
+                                Arrays.asList()
+                        )
+                ),
                 Arguments.of("Function",
                         Arrays.asList(
                                 //FUN name() DO stmt; END
@@ -169,6 +187,21 @@ final class ParserTests {
                                 Arrays.asList()
                         )
                 ),
+                Arguments.of("invalid DO",
+                        Arrays.asList(
+                                //0123456789
+                                //IF expr THEN
+                                new Token(Token.Type.IDENTIFIER, "IF", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 3),
+                                new Token(Token.Type.IDENTIFIER, "THEN", 8)
+
+                        ),
+                        new Ast.Statement.If(
+                                new Ast.Expression.Access(Optional.empty(), "expr"),
+                                Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt"))),
+                                Arrays.asList()
+                        )
+                ),
                 Arguments.of("Else",
                         Arrays.asList(
                                 //IF expr DO stmt1; ELSE stmt2; END
@@ -191,6 +224,35 @@ final class ParserTests {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource
+    void testSwitchStatement(String test, List<Token> tokens, Ast.Statement.Switch expected) {
+        test(tokens, expected, Parser::parseStatement);
+    }
+
+    private static Stream<Arguments> testSwitchStatement() {
+        return Stream.of(
+                Arguments.of("Empty Switch",
+                        Arrays.asList(
+                                //          1         2
+                                //01234567890123456789012345
+                                //SWITCH expr DEFAULT END
+                                new Token(Token.Type.IDENTIFIER, "SWITCH", 0),
+                                new Token(Token.Type.IDENTIFIER, "expr", 7),
+                                new Token(Token.Type.IDENTIFIER, "DEFAULT", 12),
+                                new Token(Token.Type.IDENTIFIER, "END", 20)
+
+                        ),
+                        new Ast.Statement.Switch(
+                                new Ast.Expression.Access(Optional.empty(), "expr"),
+                                Arrays.asList(new Ast.Statement.Expression.Case(
+                                        Optional.of(new Ast.Expression.Access(Optional.empty(), "expr")),
+                                        Arrays.asList(new Ast.Statement.Expression(new Ast.Expression.Access(Optional.empty(), "stmt")))
+
+                                )))
+                        )
+                );
+    }
     /*
 
     @ParameterizedTest

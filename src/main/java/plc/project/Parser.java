@@ -38,14 +38,37 @@ public final class Parser {
         List<Ast.Global> globes = new ArrayList<>();
         List<Ast.Function> functs = new ArrayList<>();
 
-        while(tokens.has(0)){
+
+
+
+        while(tokens.has(0) && (peek("LIST") || peek("VAR") || peek("VAL"))){
+            /*
             if(peek("FUN")){
                 functs.add(parseFunction());
             }else{
                 globes.add(parseGlobal());
             }
+
+             */
+            globes.add(parseGlobal());
+
+        }
+        while(tokens.has(0) && (peek("FUN")) ){
+            /*
+            if(peek("FUN")){
+                functs.add(parseFunction());
+            }else{
+                globes.add(parseGlobal());
+            }
+
+             */
+            functs.add(parseFunction());
+
         }
 
+        if(tokens.has(0)){
+            throw new ParseException("Expected end of code. Related: Functions go after global variables, no exceptions", tokens.get(0).getIndex());
+        }
         return new Ast.Source(globes, functs);
     }
 
@@ -110,14 +133,23 @@ public final class Parser {
         List<Ast.Expression> expressions = new ArrayList<>();
         expressions.add(parseExpression());
 
-        while(tokens.has(0)){
+        while(tokens.has(0) && (!match("]"))){
             if(!match(",")){
                 throw new ParseException("comma expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
             expressions.add(parseExpression());
         }
 
+        /*
         if(!match("]")){
+            throw new ParseException("closing bracket expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+        }
+*/
+
+        if(!"]".equals(tokens.get(-1).getLiteral())){
+            //list doesnt close []
+            //
+            //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             throw new ParseException("closing bracket expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
         }
 
@@ -347,6 +379,9 @@ public final class Parser {
         if(!tokens.has(0)){
             return stats;
         }
+        if(peek("END")){
+            return stats;
+        }
 
         stats.add(parseStatement());
 
@@ -475,19 +510,46 @@ public final class Parser {
                 if(tokens.has(0)){
                     elseStatements = parseBlock();
                 }else{
-                    throw new ParseException("missing else statements", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    //throw new ParseException("missing else statements", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    if(tokens.has(0)){
+                        //System.out.println(tokens.get(0).getIndex());
+                        throw new ParseException("missing else statements", tokens.get(0).getIndex());
+                    }
+                    else{
+                        //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                        throw new ParseException("missing else statements", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    }
                 }
             }
             Ast.Statement.If ifStatement = new Ast.Statement.If(cond, thenStatements, elseStatements);
 
             if(!match("END")){
-                throw new ParseException("missing 'END'", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                //throw new ParseException("missing 'END'", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                if(tokens.has(0)){
+                    //System.out.println(tokens.get(0).getIndex());
+                    throw new ParseException("missing 'END'", tokens.get(0).getIndex());
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("missing 'END'", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
             }
 
             return ifStatement;
 
         }else{
-            throw new ParseException("missing 'DO'", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+
+            if(tokens.has(0)){
+                //System.out.println(tokens.get(0).getIndex());
+                throw new ParseException("missing 'DO'", tokens.get(0).getIndex());
+            }
+            else{
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                throw new ParseException("missing 'DO'", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+
+
+
         }
     }
 
