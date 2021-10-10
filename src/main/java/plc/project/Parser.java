@@ -82,21 +82,47 @@ public final class Parser {
         if(match("LIST")){
             Ast.Global list = parseList();
             if(!match(";")){
-                throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                if(tokens.has(0)){
+                    //System.out.println(tokens.get(0).getIndex());
+                    throw new ParseException("semicolon expected", tokens.get(0).getIndex());
+
+                }
+                else{
+                    // System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
             }
             return list;
         }
         else if(match("VAR")){
             Ast.Global mutable = parseMutable();
             if(!match(";")){
-                throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                if(tokens.has(0)){
+                    //System.out.println(tokens.get(0).getIndex());
+                    throw new ParseException("semicolon expected", tokens.get(0).getIndex());
+
+                }
+                else{
+                    // System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
             }
             return mutable;
         }
         else if(match("VAL")){
             Ast.Global immutable = parseImmutable();
             if(!match(";")){
-                throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                //throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                if(tokens.has(0)){
+                    //System.out.println(tokens.get(0).getIndex());
+                    throw new ParseException("semicolon expected", tokens.get(0).getIndex());
+
+                }
+                else{
+                   // System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
             }
             return immutable;
         }else{
@@ -134,8 +160,20 @@ public final class Parser {
         expressions.add(parseExpression());
 
         while(tokens.has(0) && (!match("]"))){
+
+
             if(!match(",")){
-                throw new ParseException("comma expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                //throw new ParseException("comma expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                if(tokens.has(0)){
+                    //System.out.println(tokens.get(0).getIndex());
+                    throw new ParseException("Expected comma or closing bracket", tokens.get(0).getIndex());
+
+                }
+                else{
+                    //System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    throw new ParseException("Expected comma or closing bracket", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
             }
             expressions.add(parseExpression());
         }
