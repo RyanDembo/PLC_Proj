@@ -127,7 +127,11 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Group ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        Environment.PlcObject obj = visit(ast.getExpression());
+
+        return Environment.create(obj.getValue());
     }
 
     @Override
@@ -345,17 +349,81 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Access ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        if(ast.getOffset().isPresent()){
+            //access a list
+
+            BigInteger offset = requireType(BigInteger.class, visit(ast.getOffset().get()));
+
+            Environment.Variable var = scope.lookupVariable(ast.getName());
+
+            //requireType(List<Environment.PlcObject>.class, var.getValue())
+            if(var.getValue().getValue() instanceof List){
+                List list = (List) var.getValue().getValue();
+
+                int size = list.size();
+
+                BigInteger SIZE = new BigInteger(Integer.toString(size));
+
+                BigInteger ZERO = BigInteger.ZERO;
+                //making sure offset in range
+                //CHECK IF NEED Exact METHOD from BigInteger
+                if(offset.compareTo(ZERO) != -1 && offset.compareTo(SIZE) == -1){
+                    return Environment.create(list.get(offset.intValue()));
+                }
+                else{
+                    throw new RuntimeException("Offset out of range");
+                }
+
+            }
+            else{
+                throw new RuntimeException("Offset value recieved, not a list");
+            }
+
+        }
+        else{
+
+            Environment.Variable var = scope.lookupVariable(ast.getName());
+
+            return var.getValue();
+        }
+
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.Function ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        int numArgs = ast.getArguments().size();
+        List<Environment.PlcObject> args = new ArrayList<>();
+
+        for(Ast.Expression exp : ast.getArguments()){
+            //visit(exp); //visits all expression
+            args.add(visit(exp));
+
+        }
+
+        //arity = 0
+        Environment.Function fun = scope.lookupFunction(ast.getName(), numArgs);
+
+        return Environment.create(fun.invoke(args).getValue());
+
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Expression.PlcList ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        List<Object> items = new ArrayList<>();
+
+        for(Ast.Expression exp : ast.getValues()){
+            //visit(exp); //visits all expression
+            items.add(visit(exp).getValue());
+
+        }
+
+
+        //System.out.println(ast.getValues());
+        return Environment.create(items);
     }
 
     /**
