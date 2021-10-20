@@ -40,7 +40,10 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Expression ast) {
-        throw new UnsupportedOperationException(); //TODO
+       // throw new UnsupportedOperationException(); //TODO
+        visit(ast.getExpression());
+
+        return Environment.NIL;
     }
 
     @Override
@@ -63,12 +66,87 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Assignment ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        if(ast.getReceiver() instanceof Ast.Expression.Access){
+            Environment.Variable var = scope.lookupVariable(((Ast.Expression.Access) ast.getReceiver()).getName());
+
+            if(!var.getMutable()){
+                throw new RuntimeException("Receiving variable is not Mutable.");
+            }
+
+
+            // should deal with index out of bounds for list
+            Environment.PlcObject obj = visit(ast.getReceiver());
+
+            if(((Ast.Expression.Access) ast.getReceiver()).getOffset().isPresent()){
+                // is a list
+                BigInteger offset = requireType(BigInteger.class, visit(((Ast.Expression.Access) ast.getReceiver()).getOffset().get()));
+
+                int off = offset.intValue();
+                List list = (List) var.getValue().getValue();
+//may be wrong
+                //TEST if need to update tree node value for the access property
+                list.set(off, visit(ast.getValue()).getValue());
+
+
+
+                var.setValue(Environment.create(list));
+            }
+            else{
+            // is mutable var
+                var.setValue(visit(ast.getValue()));
+
+            }
+
+
+            return Environment.NIL;
+        }
+        else{
+            throw new RuntimeException("Receiving variable is not Accessible.");
+        }
+
+
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.If ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        if(requireType(Boolean.class, visit(ast.getCondition()))){
+            try{
+                //new scope       //parent scope
+                scope = new Scope(scope);
+
+                for(Ast.Statement stmt : ast.getThenStatements()){
+                    visit(stmt); //visits all statements
+
+
+                }
+
+            }
+
+            finally{
+                scope = scope.getParent(); // returns to parent scope
+            }
+
+
+        }
+        else{
+            try{
+                //new scope       //parent scope
+                scope = new Scope(scope);
+
+                for(Ast.Statement stmt : ast.getElseStatements()){
+                    visit(stmt); //visits all statements
+                }
+
+            }
+
+            finally{
+                scope = scope.getParent(); // returns to parent scope
+            }
+        }
+        return Environment.NIL;
     }
 
     @Override
