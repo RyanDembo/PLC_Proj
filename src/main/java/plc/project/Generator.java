@@ -41,11 +41,14 @@ public final class Generator implements Ast.Visitor<Void> {
     @Override
     public Void visit(Ast.Function ast) {
         throw new UnsupportedOperationException(); //TODO
+
     }
 
     @Override
     public Void visit(Ast.Statement.Expression ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        print(ast.getExpression(), ";");
+        return null;
     }
 
     @Override
@@ -64,12 +67,57 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Assignment ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        print(ast.getReceiver(), " = ", ast.getValue(), ";");
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.If ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        //HELP case if no statements inside of if statement {} or { *newline* }
+        print("if (", ast.getCondition(), ") {");
+        if(ast.getThenStatements().isEmpty()){
+            print("}");
+            newline(++indent);
+        }
+        else{
+            newline(++indent);
+            //i != ast.getArguments().size()-1
+            int i =0;
+            for(Ast.Statement stat : ast.getThenStatements()){
+                if(i != ast.getThenStatements().size()-1) {
+                    print(stat);
+                    newline(indent);
+                    i++;
+                }
+                else{
+                    //last statement
+                    print(stat);
+                    newline(--indent);
+                    print("}");
+                }
+            }
+        } //outside then blocks, now check for else
+        if(!ast.getElseStatements().isEmpty()){
+            print(" else {");
+            newline(++indent);
+            int i =0;
+            for(Ast.Statement stat : ast.getElseStatements()){
+                if(i != ast.getElseStatements().size()-1) {
+                    print(stat);
+                    newline(indent);
+                    i++;
+                }
+                else{
+                    //last statement
+                    print(stat);
+                    newline(--indent);
+                    print("}");
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -101,7 +149,9 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Return ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        print("return ", ast.getValue(), ";");
+        return null;
     }
 
     @Override
@@ -202,6 +252,7 @@ public final class Generator implements Ast.Visitor<Void> {
                     i++;
                 }
                 else{
+                    //last expression
                     print(expr);
                 }
             }
