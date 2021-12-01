@@ -120,7 +120,7 @@ public final class Parser {
 
                 }
                 else{
-                   // System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    // System.out.println(tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                     throw new ParseException("semicolon expected", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
                 }
             }

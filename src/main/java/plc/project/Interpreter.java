@@ -25,17 +25,110 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Source ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        List<Ast.Global> globes = ast.getGlobals();
+        List<Ast.Function> functs = ast.getFunctions();
+        Environment.PlcObject ret = Environment.NIL;
+        boolean hasMain = false;
+
+            for(Ast.Global g : globes){
+                visit(g);
+            }
+            int count = 0;
+            int index = -1;
+        for(Ast.Function f : functs){
+
+            if(!(f.getName().equals("main") && f.getParameters().isEmpty())) {
+                visit(f);
+            }
+            else {
+            hasMain = true;
+
+            index = count;
+
+
+            }
+            count++;
+        }
+
+        if(hasMain){
+            visit(functs.get(index));
+            List<Environment.PlcObject> temp = new ArrayList<>();
+
+
+            return scope.lookupFunction("main", 0).invoke(temp);
+        }
+        else{
+            throw new RuntimeException("Missing Main Function");
+        }
+
+
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Global ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        if(ast.getMutable()){
+            if(ast.getValue().isPresent()){
+                scope.defineVariable(ast.getName(), true, Environment.create(visit(ast.getValue().get()).getValue()));
+            } else {
+                scope.defineVariable(ast.getName(), true, Environment.NIL);
+            }
+        }else{
+            if(!ast.getValue().isPresent()){
+                throw new RuntimeException("missing required value for immutable");
+            }
+            scope.defineVariable(ast.getName(), false, Environment.create(visit(ast.getValue().get()).getValue()));
+        }
+
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Function ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+
+        String name = ast.getName();
+        //List<String> params = ast.getParameters();
+        int arity = ast.getParameters().size();
+
+        scope.defineFunction(name, arity, args -> {
+            try{
+                //new scope       //parent scope
+                scope = new Scope(scope);
+                System.out.println("made new scope");
+
+                // in new scope make vars from each arg
+                int count = 0;
+                for(String s : ast.getParameters()){
+                    //Scope tempScope = scope.getParent();
+                   // Environment.Variable tempVar = tempScope.lookupVariable(s);
+
+
+                    scope.defineVariable(s, true, Environment.create(args.get(count).getValue()));
+                    count++;
+                }
+
+                System.out.println(ast.getStatements().get(0));
+                for(Ast.Statement stmt : ast.getStatements()){
+                    try {
+                        visit(stmt); //visits all statements
+                    }
+                    catch (Return r){
+                        return r.value;
+                    }
+
+                }
+
+            }
+
+            finally{
+                scope = scope.getParent(); // returns to parent scope
+            }
+            return Environment.NIL;});
+
+        return Environment.NIL;
     }
 
     @Override
@@ -151,12 +244,36 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Switch ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        scope = new Scope(scope);
+        List<Ast.Statement.Case> switchCases = ast.getCases();
+        try{
+            for(Ast.Statement c : switchCases){
+                visit(c);
+                break;
+            }
+        } finally {
+            scope = scope.getParent();
+        }
+
+        return Environment.NIL;
     }
 
     @Override
     public Environment.PlcObject visit(Ast.Statement.Case ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        try{
+            //new scope       //parent scope
+            scope = new Scope(scope);
+
+            for(Ast.Statement stmt : ast.getStatements()){
+                visit(stmt); //visits all statements
+            }
+        }
+        finally{
+            scope = scope.getParent(); // returns to parent scope
+        }
+        return Environment.NIL;
     }
 
     @Override
@@ -222,7 +339,7 @@ public class Interpreter implements Ast.Visitor<Environment.PlcObject> {
 
         String op = ast.getOperator();
 
-        switch (op){
+         switch (op){
             case "&&":
                 boolean result = requireType(Boolean.class, visit(ast.getLeft())) &&
                         requireType(Boolean.class, visit(ast.getRight()));
