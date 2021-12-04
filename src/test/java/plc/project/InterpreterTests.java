@@ -27,6 +27,11 @@ final class InterpreterTests {
 
     private static Stream<Arguments> testSource() {
         return Stream.of(
+                // Predefined main
+                Arguments.of("empty main", new Ast.Function(
+                        "main", Arrays.asList(),Arrays.asList(
+                                new Ast.Statement.Return(new Ast.Expression.Literal(BigInteger.ZERO))
+                        )),
                 // FUN main() DO RETURN 0; END
                 Arguments.of("Main", new Ast.Source(
                         Arrays.asList(),
@@ -46,7 +51,7 @@ final class InterpreterTests {
                                         new Ast.Expression.Access(Optional.empty(), "y")                                ))
                         )))
                 ), Environment.NIL.getValue())
-        );
+        ));
     }
 
     @ParameterizedTest
@@ -69,7 +74,7 @@ final class InterpreterTests {
     void testList() {
         // LIST list = [1, 5, 10];
 
-        List<Object> expected = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
+        List<BigInteger> expected = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
 
         List<Ast.Expression> values = Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
                                                     new Ast.Expression.Literal(BigInteger.valueOf(5)),
@@ -167,8 +172,8 @@ final class InterpreterTests {
     void testListAssignmentStatement() {
         // list[2] = 3;
 
-        List<Object> expected = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.valueOf(3));
-        List<Object> list = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
+        List<BigInteger> expected = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.valueOf(3));
+        List<BigInteger> list = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
 
         Scope scope = new Scope(null);
         scope.defineVariable("list", true, Environment.create(list));
@@ -373,20 +378,6 @@ final class InterpreterTests {
                                 new Ast.Expression.Literal(new BigDecimal("3.4"))
                         ),
                         new BigDecimal("0.4")
-                ),
-                Arguments.of("power",
-                        new Ast.Expression.Binary("^",
-                                new Ast.Expression.Literal(new BigInteger("2")),
-                                new Ast.Expression.Literal(new BigInteger("0"))
-                        ),
-                        new BigInteger("1")
-                ),
-                Arguments.of("power decimal",
-                        new Ast.Expression.Binary("^",
-                                new Ast.Expression.Literal(new BigDecimal("1.5")),
-                                new Ast.Expression.Literal(new BigInteger("3"))
-                        ),
-                        new BigDecimal("3.375")
                 )
         );
     }
@@ -413,7 +404,7 @@ final class InterpreterTests {
     void testListAccessExpression() {
         // list[1]
 
-        List<Object> list = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
+        List<BigInteger> list = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
 
         Scope scope = new Scope(null);
         scope.defineVariable("list", true, Environment.create(list));
@@ -441,21 +432,6 @@ final class InterpreterTests {
                         Environment.NIL.getValue()
                 )
         );
-    }
-
-    @Test
-    void testPlcList() {
-        // [1, 5, 10]
-
-        List<Object> expected = Arrays.asList(BigInteger.ONE, BigInteger.valueOf(5), BigInteger.TEN);
-
-        List<Ast.Expression> values = Arrays.asList(new Ast.Expression.Literal(BigInteger.ONE),
-                new Ast.Expression.Literal(BigInteger.valueOf(5)),
-                new Ast.Expression.Literal(BigInteger.TEN));
-
-        Ast ast = new Ast.Expression.PlcList(values);
-
-        test(ast, expected, new Scope(null));
     }
 
     private static Scope test(Ast ast, Object expected, Scope scope) {

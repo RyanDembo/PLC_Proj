@@ -33,37 +33,14 @@ public final class Parser {
      * Parses the {@code source} rule.
      */
     public Ast.Source parseSource() throws ParseException {
-        //throw new UnsupportedOperationException(); //TODO
-        // INCOMPLETE
         List<Ast.Global> globes = new ArrayList<>();
         List<Ast.Function> functs = new ArrayList<>();
 
-
-
-
         while(tokens.has(0) && (peek("LIST") || peek("VAR") || peek("VAL"))){
-            /*
-            if(peek("FUN")){
-                functs.add(parseFunction());
-            }else{
-                globes.add(parseGlobal());
-            }
-
-             */
             globes.add(parseGlobal());
-
         }
         while(tokens.has(0) && (peek("FUN")) ){
-            /*
-            if(peek("FUN")){
-                functs.add(parseFunction());
-            }else{
-                globes.add(parseGlobal());
-            }
-
-             */
             functs.add(parseFunction());
-
         }
 
         if(tokens.has(0)){
@@ -211,6 +188,24 @@ public final class Parser {
         tokens.advance();
 
         if(tokens.has(0)){
+            if(match(":")){
+                String type = tokens.get(0).getLiteral();
+                tokens.advance();
+
+                if(!match("=")){
+                    throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+
+                if(!tokens.has(0)){
+                    throw new ParseException("missing expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                }
+
+                Ast.Expression expr = parseExpression();
+
+                return new Ast.Global(id,  type,true, Optional.of(expr));
+
+            }
+
             if(!match("=")){
                 throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
             }
@@ -241,6 +236,24 @@ public final class Parser {
 
         String id = tokens.get(0).getLiteral();
         tokens.advance();
+
+        if(tokens.has(0) && match(":")){
+            String type = tokens.get(0).getLiteral();
+            tokens.advance();
+
+            if(!match("=")){
+                throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+
+            if(!tokens.has(0)){
+                throw new ParseException("missing expression", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+            }
+
+            Ast.Expression expr = parseExpression();
+
+            return new Ast.Global(id,  type,false, Optional.of(expr));
+
+        }
 
         if(!match("=")){
             throw new ParseException("missing =", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
@@ -283,6 +296,8 @@ public final class Parser {
         }
 
         String fname = tokens.get(-1).getLiteral();
+        String returnType = "";
+        boolean hasType = false;
 
         if(!match("(")){
             if(tokens.has(0)){
@@ -296,10 +311,16 @@ public final class Parser {
             }
         }
         List<String> args = new ArrayList<>();
+        List<String> paramTypes = new ArrayList<>();
 
         if(match(")")){
             //no arguments
 
+            if(tokens.has(0) && match(":")){
+                hasType = true;
+                returnType = tokens.get(0).getLiteral();
+                tokens.advance();
+            }
 
             if(!match("DO")){
                 if(tokens.has(0)){
@@ -323,7 +344,11 @@ public final class Parser {
                 }
             }
 
-            return new Ast.Function(fname, args, stats);
+            if(hasType){
+                return new Ast.Function(fname, args, paramTypes, Optional.of(returnType), stats);
+            }else{
+                return new Ast.Function(fname, args, stats);
+            }
 
         }
         else{
@@ -342,8 +367,10 @@ public final class Parser {
             String Aname = tokens.get(-1).getLiteral();
             args.add(Aname);
 
-
-
+            if(tokens.has(0) && match(":")){
+                String p = tokens.get(0).getLiteral();
+                paramTypes.add(p);
+            }
 
 
             //funct(stuff,
@@ -364,6 +391,11 @@ public final class Parser {
                 }
                 String Aname2 = tokens.get(-1).getLiteral();
                 args.add(Aname2);
+
+                if(tokens.has(0) && match(":")){
+                    String p = tokens.get(0).getLiteral();
+                    paramTypes.add(p);
+                }
             }
 
 
@@ -514,6 +546,23 @@ public final class Parser {
         if(tokens.has(0) && tokens.get(0).getType().equals(Token.Type.IDENTIFIER)){
             String name = tokens.get(0).getLiteral();
             tokens.advance();
+
+            if(tokens.has(0) && match(":")){
+                String type = tokens.get(0).getLiteral();
+                tokens.advance();
+
+                if(tokens.has(0) && match("=")){
+                    Ast.Expression exp1 = parseExpression();
+                    if(!match(";")){
+                        throw new ParseException("Missing Semicolon", tokens.get(-1).getIndex()+tokens.get(-1).getLiteral().length());
+                    }
+                    return new Ast.Statement.Declaration(name, Optional.of(type), Optional.of(exp1));
+                }
+
+                return new Ast.Statement.Declaration(name, Optional.of(type), Optional.empty());
+
+            }
+
             if(tokens.has(0) && match("=")){
                 Ast.Expression exp1 = parseExpression();
                 if(!match(";")){
