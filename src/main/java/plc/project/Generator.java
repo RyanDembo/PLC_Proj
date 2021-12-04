@@ -30,17 +30,90 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Source ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        print("public class Main {");
+        newline(indent);
+
+        for(Ast.Global g : ast.getGlobals()){
+            visit(g);
+            newline(indent);
+        }
+        newline(++indent);
+
+        print("public static void main(String[] args) {");
+        newline(++indent);
+        print("System.exit(new Main().main());");
+        newline(--indent);
+        print("}");
+
+        newline(--indent);
+        newline(++indent);
+
+        for(Ast.Function f : ast.getFunctions()){
+            visit(f);
+            newline(--indent);
+        }
+        newline(indent);
+        print("}");
+
+
+        return null;
     }
 
     @Override
     public Void visit(Ast.Global ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        if(ast.getMutable()){
+            if(ast.getValue().isPresent() && ast.getValue().get() instanceof Ast.Expression.PlcList){
+                print(ast.getVariable().getType().getJvmName(), "[] ", ast.getName(), " = ", ast.getValue().get(), ";");
+
+            } else {
+                if(ast.getValue().isPresent()){
+                    print(ast.getVariable().getType().getJvmName(), " ", ast.getName(), " = ", ast.getValue(), ";");
+                } else {
+                    print(ast.getVariable().getType().getJvmName(), " ", ast.getName(), ";");
+                }
+            }
+        } else {
+            print("final ", ast.getTypeName(), " ", ast.getName(), " = ", ast.getValue(), ";");
+        }
+
+        return null;
     }
 
     @Override
     public Void visit(Ast.Function ast) {
-        throw new UnsupportedOperationException(); //TODO
+        //throw new UnsupportedOperationException(); //TODO
+        String paramList = "";
+        int i = 0;
+        for (String paramType : ast.getParameterTypeNames()){
+            if(i != ast.getParameterTypeNames().size()-1){
+                paramList = paramList + paramType + " " + ast.getParameters().get(i) + ", ";
+            } else {
+                paramList = paramList + paramType + " " + ast.getParameters().get(i);
+            }
+            i++;
+        }
+
+        print(ast.getFunction().getReturnType().getJvmName(), " ", ast.getFunction().getName(), "(", paramList, ")", " {");
+        newline(++indent);
+
+        i =0;
+        for(Ast.Statement s : ast.getStatements()){
+            if(i != ast.getStatements().size()-1) {
+                print(s);
+                newline(indent);
+                i++;
+            }
+            else{
+                //last statement
+                print(s);
+                newline(--indent);
+                print("}");
+            }
+        }
+
+        return null;
 
     }
 
@@ -122,12 +195,55 @@ public final class Generator implements Ast.Visitor<Void> {
 
     @Override
     public Void visit(Ast.Statement.Switch ast) {
-        throw new UnsupportedOperationException(); //TODO
+        print("switch (", ast.getCondition(), ") {");
+        newline(++indent);
+        for (Ast.Statement.Case c : ast.getCases()){
+            visit(c);
+        }
+        newline(indent);
+        print("}");
+        return null;
     }
 
     @Override
     public Void visit(Ast.Statement.Case ast) {
-        throw new UnsupportedOperationException(); //TODO
+        if(ast.getValue().isPresent()){
+            print("case ", ast.getValue().get(), ":");
+            newline(++indent);
+
+            int i = 0;
+            for(Ast.Statement s : ast.getStatements()){
+                if(i != ast.getStatements().size()-1) {
+                    print(s);
+                    newline(indent);
+                    i++;
+                }
+                else{
+                    //last statement
+                    print(s);
+                    newline(--indent);
+                }
+            }
+
+        } else {
+            print("default:");
+            newline(++indent);
+
+            int i = 0;
+            for(Ast.Statement s : ast.getStatements()){
+                if(i != ast.getStatements().size()-1) {
+                    print(s);
+                    newline(indent);
+                    i++;
+                }
+                else{
+                    //last statement
+                    print(s);
+                    indent -= 2;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
